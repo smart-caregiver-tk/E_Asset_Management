@@ -241,7 +241,7 @@ BEGIN
     dept_id_uuid := NULL;
   END IF;
 
-  INSERT INTO profiles (id, email, full_name, role, department_id)
+  INSERT INTO public.profiles (id, email, full_name, role, department_id)
   VALUES (
     NEW.id,
     COALESCE(NEW.email, ''),
