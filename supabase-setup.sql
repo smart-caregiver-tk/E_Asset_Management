@@ -229,14 +229,25 @@ CREATE POLICY "Anyone can insert logs" ON activity_logs FOR INSERT WITH CHECK (t
 -- ============================================================
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  dept_id_text TEXT;
+  dept_id_uuid UUID;
 BEGIN
+  -- Safe casting for department_id to prevent invalid input syntax for type uuid
+  dept_id_text := NEW.raw_user_meta_data->>'department_id';
+  IF dept_id_text IS NOT NULL AND dept_id_text <> '' THEN
+    dept_id_uuid := dept_id_text::UUID;
+  ELSE
+    dept_id_uuid := NULL;
+  END IF;
+
   INSERT INTO profiles (id, email, full_name, role, department_id)
   VALUES (
     NEW.id,
-    NEW.email,
+    COALESCE(NEW.email, ''),
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'role', 'department'),
-    (NEW.raw_user_meta_data->>'department_id')::UUID
+    dept_id_uuid
   );
   RETURN NEW;
 END;
