@@ -129,9 +129,13 @@ ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 
 -- departments: ทุกคนอ่านได้
+DROP POLICY IF EXISTS "Anyone can read departments" ON departments;
 CREATE POLICY "Anyone can read departments" ON departments FOR SELECT USING (true);
 
 -- profiles: อ่านโปรไฟล์ตัวเอง
+DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admin can read all profiles" ON profiles;
 CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 -- admin อ่านทุกคน
@@ -140,6 +144,10 @@ CREATE POLICY "Admin can read all profiles" ON profiles FOR SELECT USING (
 );
 
 -- categories: department เห็นของตัวเอง, admin เห็นทั้งหมด
+DROP POLICY IF EXISTS "Department reads own categories" ON categories;
+DROP POLICY IF EXISTS "Department inserts own categories" ON categories;
+DROP POLICY IF EXISTS "Department updates own categories" ON categories;
+DROP POLICY IF EXISTS "Department deletes own categories" ON categories;
 CREATE POLICY "Department reads own categories" ON categories FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
@@ -158,6 +166,10 @@ CREATE POLICY "Department deletes own categories" ON categories FOR DELETE USING
 );
 
 -- assets: department เห็นของตัวเอง, admin เห็นทั้งหมด
+DROP POLICY IF EXISTS "Department reads own assets" ON assets;
+DROP POLICY IF EXISTS "Department inserts own assets" ON assets;
+DROP POLICY IF EXISTS "Department updates own assets" ON assets;
+DROP POLICY IF EXISTS "Department deletes own assets" ON assets;
 CREATE POLICY "Department reads own assets" ON assets FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
@@ -176,6 +188,9 @@ CREATE POLICY "Department deletes own assets" ON assets FOR DELETE USING (
 );
 
 -- repairs: department เห็นของตัวเอง, admin เห็นทั้งหมด
+DROP POLICY IF EXISTS "Department reads own repairs" ON repairs;
+DROP POLICY IF EXISTS "Department inserts own repairs" ON repairs;
+DROP POLICY IF EXISTS "Department deletes own repairs" ON repairs;
 CREATE POLICY "Department reads own repairs" ON repairs FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
@@ -190,6 +205,8 @@ CREATE POLICY "Department deletes own repairs" ON repairs FOR DELETE USING (
 );
 
 -- activity_logs: department เห็นของตัวเอง, admin เห็นทั้งหมด
+DROP POLICY IF EXISTS "Department reads own logs" ON activity_logs;
+DROP POLICY IF EXISTS "Anyone can insert logs" ON activity_logs;
 CREATE POLICY "Department reads own logs" ON activity_logs FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
@@ -214,7 +231,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
@@ -229,7 +247,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER assets_updated_at
+DROP TRIGGER IF EXISTS assets_updated_at ON assets;
+CREATE TRIGGER assets_updated_at
   BEFORE UPDATE ON assets
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -241,6 +260,9 @@ VALUES ('asset-photos', 'asset-photos', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policy: ทุกคนอ่านรูปได้, login แล้วอัปโหลดได้
+DROP POLICY IF EXISTS "Public read asset photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated upload asset photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated delete asset photos" ON storage.objects;
 CREATE POLICY "Public read asset photos" ON storage.objects FOR SELECT USING (bucket_id = 'asset-photos');
 CREATE POLICY "Authenticated upload asset photos" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'asset-photos' AND auth.role() = 'authenticated');
 CREATE POLICY "Authenticated delete asset photos" ON storage.objects FOR DELETE USING (bucket_id = 'asset-photos' AND auth.role() = 'authenticated');
