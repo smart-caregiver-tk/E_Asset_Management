@@ -128,6 +128,17 @@ ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 -- ============================================================
 
+-- Helper function to check if the current user is an admin (Security Definer to avoid RLS recursion)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- departments: ทุกคนอ่านได้
 DROP POLICY IF EXISTS "Anyone can read departments" ON departments;
 CREATE POLICY "Anyone can read departments" ON departments FOR SELECT USING (true);
@@ -140,7 +151,7 @@ CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.ui
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 -- admin อ่านทุกคน
 CREATE POLICY "Admin can read all profiles" ON profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- categories: department เห็นของตัวเอง, admin เห็นทั้งหมด
@@ -150,19 +161,19 @@ DROP POLICY IF EXISTS "Department updates own categories" ON categories;
 DROP POLICY IF EXISTS "Department deletes own categories" ON categories;
 CREATE POLICY "Department reads own categories" ON categories FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department inserts own categories" ON categories FOR INSERT WITH CHECK (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department updates own categories" ON categories FOR UPDATE USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department deletes own categories" ON categories FOR DELETE USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 
 -- assets: department เห็นของตัวเอง, admin เห็นทั้งหมด
@@ -172,19 +183,19 @@ DROP POLICY IF EXISTS "Department updates own assets" ON assets;
 DROP POLICY IF EXISTS "Department deletes own assets" ON assets;
 CREATE POLICY "Department reads own assets" ON assets FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department inserts own assets" ON assets FOR INSERT WITH CHECK (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department updates own assets" ON assets FOR UPDATE USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department deletes own assets" ON assets FOR DELETE USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 
 -- repairs: department เห็นของตัวเอง, admin เห็นทั้งหมด
@@ -193,15 +204,15 @@ DROP POLICY IF EXISTS "Department inserts own repairs" ON repairs;
 DROP POLICY IF EXISTS "Department deletes own repairs" ON repairs;
 CREATE POLICY "Department reads own repairs" ON repairs FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department inserts own repairs" ON repairs FOR INSERT WITH CHECK (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Department deletes own repairs" ON repairs FOR DELETE USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 
 -- activity_logs: department เห็นของตัวเอง, admin เห็นทั้งหมด
@@ -209,7 +220,7 @@ DROP POLICY IF EXISTS "Department reads own logs" ON activity_logs;
 DROP POLICY IF EXISTS "Anyone can insert logs" ON activity_logs;
 CREATE POLICY "Department reads own logs" ON activity_logs FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
-  OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  OR public.is_admin()
 );
 CREATE POLICY "Anyone can insert logs" ON activity_logs FOR INSERT WITH CHECK (true);
 
