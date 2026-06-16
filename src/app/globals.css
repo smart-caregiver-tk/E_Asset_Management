@@ -5,38 +5,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #48B17F;
-  --primary-dark: #2E7D56;
-  --primary-light: #E8F6EF;
-  --primary-gradient: linear-gradient(135deg, #99CC99 0%, #48B17F 100%);
-  --secondary: #99CC99;
-  --accent: #CCFF99;
-  --success: #48B17F;
-  --success-light: #E8F6EF;
-  --danger: #EF4444;
-  --danger-light: #FEE2E2;
-  --warning: #F59E0B;
-  --warning-light: #FEF3C7;
-  --info: #5C9C5C;
-  --info-light: #CCFFCC;
-  --sidebar-bg: linear-gradient(175deg, #1C2D27 0%, #2D4F3F 100%);
+  --primary: #8C6239;
+  --primary-dark: #5A3E2B;
+  --primary-light: #FAF5F0;
+  --primary-gradient: linear-gradient(135deg, #C6A99A 0%, #8C6239 100%);
+  --secondary: #C6A99A;
+  --accent: #EADBC8;
+  --success: #5C8374;
+  --success-light: #F0F4F2;
+  --danger: #C85C5C;
+  --danger-light: #FBEBEB;
+  --warning: #D99B59;
+  --warning-light: #FDF5ED;
+  --info: #7E8A96;
+  --info-light: #F0F2F4;
+  --sidebar-bg: #FAF8F5;
   --sidebar-w: 260px;
   --sidebar-w-col: 72px;
   --topbar-h: 64px;
-  --bg: #F8FAFC;
+  --bg: #F6F4F0;
   --bg-card: #FFFFFF;
-  --border: #E2E8F0;
-  --border-light: #F1F5F9;
-  --text-dark: #0F172A;
-  --text-mid: #475569;
-  --text-light: #94A3B8;
-  --text-muted: #CBD5E1;
+  --border: #EAE3DB;
+  --border-light: #F4EEE8;
+  --text-dark: #3E2E25;
+  --text-mid: #6A5A50;
+  --text-light: #A5968E;
+  --text-muted: #D8D2CB;
   --radius: 12px;
   --radius-sm: 8px;
   --radius-xs: 6px;
-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.08);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,.1);
+  --shadow: 0 1px 3px rgba(90,62,43,.04), 0 1px 2px rgba(90,62,43,.02);
+  --shadow-md: 0 4px 12px rgba(90,62,43,.06);
+  --shadow-lg: 0 10px 30px rgba(90,62,43,.08);
   --transition: all .2s ease;
 }
 
@@ -58,46 +58,46 @@ body {
   display: flex; flex-direction: column;
   position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
   transition: var(--transition);
-  box-shadow: 2px 0 20px rgba(0,0,0,.15);
+  border-right: 1px solid var(--border);
 }
 .sidebar.collapsed { width: var(--sidebar-w-col); }
 .sidebar-header {
   padding: 20px 16px 16px; display: flex; align-items: center;
-  justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.08); min-height: 72px;
+  justify-content: space-between; border-bottom: 1px solid var(--border-light); min-height: 72px;
 }
 .sidebar-logo { display: flex; align-items: center; gap: 12px; overflow: hidden; }
 .logo-icon {
-  width: 42px; height: 42px; border-radius: var(--radius-sm);
+  width: 42px; height: 42px;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; overflow: hidden; background: rgba(255,255,255,.1);
+  flex-shrink: 0; overflow: hidden; background: transparent;
 }
 .logo-icon img { width: 100%; height: 100%; object-fit: contain; }
 .logo-text { display: flex; flex-direction: column; }
-.logo-title { font-size: 1rem; font-weight: 700; color: #fff; white-space: nowrap; letter-spacing: -0.02em; }
-.logo-sub { font-size: .7rem; color: rgba(255,255,255,.5); white-space: nowrap; }
+.logo-title { font-size: 1rem; font-weight: 700; color: var(--text-dark); white-space: nowrap; letter-spacing: -0.02em; }
+.logo-sub { font-size: .7rem; color: var(--text-light); white-space: nowrap; }
 .sidebar-toggle {
-  background: rgba(255,255,255,.08); border: none; cursor: pointer;
+  background: var(--border-light); border: none; cursor: pointer;
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: rgba(255,255,255,.5); transition: var(--transition); flex-shrink: 0;
+  color: var(--text-mid); transition: var(--transition); flex-shrink: 0;
 }
-.sidebar-toggle:hover { background: rgba(255,255,255,.15); color: #fff; }
+.sidebar-toggle:hover { background: var(--border); color: var(--text-dark); }
 .sidebar-nav { flex: 1; padding: 16px 10px; overflow-y: auto; }
 .nav-section {
   font-size: .65rem; font-weight: 700; letter-spacing: .08em;
-  color: rgba(255,255,255,.3); text-transform: uppercase;
+  color: var(--text-light); text-transform: uppercase;
   padding: 12px 12px 6px; white-space: nowrap;
 }
 .sidebar.collapsed .nav-section { opacity: 0; }
 .nav-item {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px; margin-bottom: 2px; border-radius: var(--radius-sm);
-  color: rgba(255,255,255,.6); cursor: pointer; text-decoration: none;
+  color: var(--text-mid); cursor: pointer; text-decoration: none;
   transition: var(--transition); position: relative; white-space: nowrap; font-size: .9rem;
 }
-.nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item:hover { background: var(--border-light); color: var(--text-dark); }
 .nav-item.active {
-  background: rgba(72,177,127,.2); color: #fff; font-weight: 600;
+  background: var(--primary-light); color: var(--primary-dark); font-weight: 600;
 }
 .nav-item.active::before {
   content: ''; position: absolute; left: 0; top: 15%; bottom: 15%;
@@ -106,13 +106,13 @@ body {
 .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
 .nav-label { transition: var(--transition); }
 .sidebar.collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
-.nav-divider { height: 1px; background: rgba(255,255,255,.06); margin: 10px 12px; }
+.nav-divider { height: 1px; background: var(--border-light); margin: 10px 12px; }
 .sidebar-footer {
-  padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.06);
+  padding: 14px 16px; border-top: 1px solid var(--border-light);
 }
 .sidebar-dept {
   display: flex; align-items: center; gap: 8px;
-  color: rgba(255,255,255,.4); font-size: .75rem;
+  color: var(--text-light); font-size: .75rem;
 }
 .sidebar.collapsed .sidebar-dept span { opacity: 0; width: 0; overflow: hidden; }
 
@@ -366,28 +366,29 @@ textarea.form-input, textarea.textarea-field { resize: vertical; }
 /* ============================================================ LOGIN */
 .login-page {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0EA5E9 100%);
+  background: linear-gradient(135deg, #FAF8F5 0%, #FAF5F0 50%, #EADBC8 100%);
   padding: 20px; position: relative; overflow: hidden;
 }
 .login-page::before {
   content: ''; position: absolute; width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(14,165,233,.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(140, 98, 57, 0.06) 0%, transparent 70%);
   top: -200px; right: -200px; border-radius: 50%;
 }
 .login-page::after {
   content: ''; position: absolute; width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(6,182,212,.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(198, 169, 154, 0.04) 0%, transparent 70%);
   bottom: -100px; left: -100px; border-radius: 50%;
 }
 .login-card {
-  background: rgba(255,255,255,.95); backdrop-filter: blur(20px);
+  background: #FFFFFF;
   padding: 48px 36px; border-radius: 20px;
-  box-shadow: 0 25px 60px rgba(0,0,0,.3);
+  box-shadow: 0 20px 40px rgba(90, 62, 43, 0.06);
   width: 100%; max-width: 420px; text-align: center;
   animation: slideUp .4s ease; position: relative; z-index: 1;
+  border: 1px solid var(--border-light);
 }
-.login-logo { width: 90px; height: 90px; margin: 0 auto 20px; }
-.login-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; border: 3px solid var(--primary-light); }
+.login-logo { width: 90px; height: 90px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
+.login-logo img { width: 100%; height: 100%; object-fit: contain; }
 .login-title { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
 .login-subtitle { font-size: .88rem; color: var(--text-light); margin-bottom: 28px; }
 .login-error { background: var(--danger-light); color: var(--danger); padding: 10px 14px; border-radius: var(--radius-sm); font-size: .84rem; margin-bottom: 16px; text-align: left; }
