@@ -1,3 +1,5 @@
+import { Vehicle, Driver, TripLog, MaintenanceLog, IncidentReport, FuelLog } from './vehicle_types';
+
 export interface Database {
   public: {
     Tables: {
@@ -30,6 +32,36 @@ export interface Database {
         Row: ActivityLog;
         Insert: Omit<ActivityLog, 'id' | 'created_at'>;
         Update: never;
+      };
+      vehicle_cars: {
+        Row: Vehicle;
+        Insert: Omit<Vehicle, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Vehicle, 'id' | 'created_at'>>;
+      };
+      vehicle_drivers: {
+        Row: Driver;
+        Insert: Omit<Driver, 'id' | 'created_at'>;
+        Update: Partial<Omit<Driver, 'id' | 'created_at'>>;
+      };
+      vehicle_trips: {
+        Row: TripLog;
+        Insert: Omit<TripLog, 'id' | 'trip_no' | 'created_at'>;
+        Update: Partial<Omit<TripLog, 'id' | 'created_at'>>;
+      };
+      vehicle_maintenance_logs: {
+        Row: MaintenanceLog;
+        Insert: Omit<MaintenanceLog, 'id' | 'created_at'>;
+        Update: Partial<Omit<MaintenanceLog, 'id' | 'created_at'>>;
+      };
+      vehicle_incident_reports: {
+        Row: IncidentReport;
+        Insert: Omit<IncidentReport, 'id' | 'created_at'>;
+        Update: Partial<Omit<IncidentReport, 'id' | 'created_at'>>;
+      };
+      vehicle_fuel_logs: {
+        Row: FuelLog;
+        Insert: Omit<FuelLog, 'id' | 'created_at'>;
+        Update: Partial<Omit<FuelLog, 'id' | 'created_at'>>;
       };
     };
   };
