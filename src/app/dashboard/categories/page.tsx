@@ -58,7 +58,8 @@ export default function CategoriesPage() {
     setCode('');
     setName('');
     setDescription('');
-    setTargetDeptId(selectedDeptId || (departments[0]?.id || ''));
+    // Admin: default = '' (ทุกหน่วยงาน), Department user: default = กองตัวเอง
+    setTargetDeptId(selectedDeptId || '');
     setModalOpen(true);
   };
 
@@ -75,12 +76,17 @@ export default function CategoriesPage() {
     e.preventDefault();
     setModalLoading(true);
 
-    // สำหรับ Admin ที่เลือก "ทุกหน่วยงาน" (targetDeptId = '')
-    // → บันทึกประเภทครุภัณฑ์นี้ให้ทุกส่วนราชการพร้อมกัน
     const isAllDepts = profile?.role === 'admin' && !targetDeptId;
     const deptIdToSave = profile?.role === 'admin' ? targetDeptId : profile?.department_id;
 
-    if (!isAllDepts && !deptIdToSave) {
+    // ผู้ใช้ทั่วไปต้องมี department_id เสมอ
+    if (profile?.role !== 'admin' && !deptIdToSave) {
+      showToast('กรุณาระบุส่วนราชการ', 'warning');
+      setModalLoading(false);
+      return;
+    }
+    // Admin ที่ไม่ได้เลือกทั้งสองอย่าง
+    if (profile?.role === 'admin' && !isAllDepts && !deptIdToSave) {
       showToast('กรุณาระบุส่วนราชการ', 'warning');
       setModalLoading(false);
       return;
@@ -88,40 +94,62 @@ export default function CategoriesPage() {
 
     try {
       if (editingCategory) {
-        // แก้ไข: อัปเดตรายการที่เลือกอยู่ (1 รายการเท่านั้น)
+        // แก้ไข: อัปเดตเฉพาะ row นี้ (1 รายการ) — ไม่ sync ข้าม dept
         const { error } = await supabase
           .from('categories')
-          .update({
-            code,
-            name,
-            description,
-            ...(deptIdToSave ? { department_id: deptIdToSave } : {}),
-          })
+          .update({ code, name, description })
           .eq('id', editingCategory.id);
-
         if (error) throw error;
-        showToast('แก้ไขประเภทครุภัณฑ์สำเร็จ');
+        showToast('แก้ไขประเภทครุภัณฑ์สำเร็จ (แก้ไขเฉพาะรายการนี้เท่านั้น)');
+
       } else if (isAllDepts) {
-        // เพิ่มใหม่: insert ให้ทุกส่วนราชการพร้อมกัน
-        const insertRows = departments.map((dept) => ({
-          code,
-          name,
-          description,
-          department_id: dept.id,
+        // [Admin] เพิ่มแบบ "ทุกหน่วยงาน"
+        // ตรวจสอบว่า dept ไหนมีรหัสนี้อยู่แล้ว → ข้ามเพื่อกันซ้ำ
+        const { data: existing } = await supabase
+          .from('categories')
+          .select('department_id')
+          .eq('code', code);
+
+        const existingDeptIds = new Set((existing || []).map((e: any) => e.department_id));
+        const depsToInsert = departments.filter((d) => !existingDeptIds.has(d.id));
+        const skippedCount = departments.length - depsToInsert.length;
+
+        if (depsToInsert.length === 0) {
+          showToast(`ประเภทครุภัณฑ์รหัส "${code}" มีอยู่ในทุกส่วนราชการแล้ว ไม่มีการเพิ่มใหม่`, 'warning');
+          setModalLoading(false);
+          return;
+        }
+
+        const insertRows = depsToInsert.map((dept) => ({
+          code, name, description, department_id: dept.id,
         }));
 
         const { error } = await supabase.from('categories').insert(insertRows);
         if (error) throw error;
-        showToast(`เพิ่มประเภทครุภัณฑ์ "${name}" ให้ครบทั้ง ${departments.length} ส่วนราชการแล้ว ✅`);
-      } else {
-        // เพิ่มใหม่: insert ส่วนราชการเดียว
-        const { error } = await supabase.from('categories').insert({
-          code,
-          name,
-          description,
-          department_id: deptIdToSave,
-        });
 
+        if (skippedCount > 0) {
+          showToast(`เพิ่ม "${name}" ให้ ${depsToInsert.length} ส่วนราชการ (ข้าม ${skippedCount} ที่มีอยู่แล้ว) ✅`);
+        } else {
+          showToast(`เพิ่ม "${name}" ให้ครบทั้ง ${departments.length} ส่วนราชการแล้ว ✅`);
+        }
+
+      } else {
+        // [Admin หรือ Department] เพิ่มแบบ dept เดียว — ตรวจสอบซ้ำก่อน
+        const { data: existing } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('code', code)
+          .eq('department_id', deptIdToSave);
+
+        if (existing && existing.length > 0) {
+          showToast(`ประเภทครุภัณฑ์รหัส "${code}" มีอยู่ในส่วนราชการนี้แล้ว`, 'warning');
+          setModalLoading(false);
+          return;
+        }
+
+        const { error } = await supabase.from('categories').insert({
+          code, name, description, department_id: deptIdToSave,
+        });
         if (error) throw error;
         showToast('เพิ่มประเภทครุภัณฑ์สำเร็จ');
       }
@@ -173,6 +201,25 @@ export default function CategoriesPage() {
     }
   };
 
+  // [Admin + ไม่ได้กรอง dept] → dedup ตาม code ไม่แสดงซ้ำ
+  // นับจำนวน dept ที่มีแต่ละ code เพื่อแสดง badge "ส่วนกลาง"
+  const codeCountMap: Record<string, number> = {};
+  categories.forEach((c) => { codeCountMap[c.code] = (codeCountMap[c.code] || 0) + 1; });
+
+  const displayCategories =
+    profile?.role === 'admin' && !selectedDeptId
+      ? (() => {
+          const seen = new Set<string>();
+          return categories
+            .filter((c) => {
+              if (seen.has(c.code)) return false;
+              seen.add(c.code);
+              return true;
+            })
+            .map((c) => ({ ...c, _deptCount: codeCountMap[c.code] ?? 1 }));
+        })()
+      : categories.map((c) => ({ ...c, _deptCount: 1 }));
+
   return (
     <div>
       <div className="page-header">
@@ -218,16 +265,22 @@ export default function CategoriesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((cat) => (
+                  {displayCategories.map((cat: any) => (
                     <tr key={cat.id}>
                       <td style={{ fontWeight: 600 }}>{cat.code}</td>
                       <td style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{cat.name}</td>
                       <td style={{ color: 'var(--text-mid)' }}>{cat.description || '-'}</td>
                       {profile?.role === 'admin' && (
                         <td>
-                          <span className="badge">
-                            {departments.find((d) => d.id === cat.department_id)?.short_name || 'ไม่ระบุ'}
-                          </span>
+                          {cat._deptCount > 1 ? (
+                            <span className="badge" style={{ background: 'var(--primary)', color: '#fff' }}>
+                              ทุกหน่วยงาน ({cat._deptCount})
+                            </span>
+                          ) : (
+                            <span className="badge">
+                              {departments.find((d) => d.id === cat.department_id)?.short_name || 'ไม่ระบุ'}
+                            </span>
+                          )}
                         </td>
                       )}
                       <td className="text-center">
@@ -235,14 +288,14 @@ export default function CategoriesPage() {
                           <button
                             className="btn-icon btn-icon-edit"
                             onClick={() => openEditModal(cat)}
-                            title="แก้ไข"
+                            title={cat._deptCount > 1 ? 'แก้ไขเฉพาะรายการนี้ (ไม่ sync ทุก dept)' : 'แก้ไข'}
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             className="btn-icon btn-icon-del"
                             onClick={() => handleDeleteClick(cat)}
-                            title="ลบ"
+                            title={cat._deptCount > 1 ? 'ลบเฉพาะรายการนี้ (ไม่ลบทุก dept)' : 'ลบ'}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -278,9 +331,8 @@ export default function CategoriesPage() {
                     className="form-input"
                     value={targetDeptId}
                     onChange={(e) => setTargetDeptId(e.target.value)}
-                    required
                   >
-                    <option value="">-- ทุกหน่วยงาน --</option>
+                    <option value="">-- ทุกหน่วยงาน (บันทึกให้ทุกส่วนราชการ) --</option>
                     {departments.map((dept) => (
                       <option key={dept.id} value={dept.id}>
                         {dept.name}
