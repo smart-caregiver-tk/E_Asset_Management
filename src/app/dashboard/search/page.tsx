@@ -168,7 +168,7 @@ export default function SearchPage() {
             </div>
 
             <div>
-              <label className="form-label">หมวดหมู่</label>
+              <label className="form-label">ประเภท</label>
               <select
                 className="form-input"
                 value={selectedCat}

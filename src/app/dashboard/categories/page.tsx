@@ -41,7 +41,7 @@ export default function CategoriesPage() {
       if (error) throw error;
       setCategories(data || []);
     } catch (err: any) {
-      showToast('ไม่สามารถโหลดข้อมูลหมวดหมู่ได้: ' + err.message, 'error');
+      showToast('ไม่สามารถโหลดข้อมูลประเภทครุภัณฑ์ได้: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -75,9 +75,12 @@ export default function CategoriesPage() {
     e.preventDefault();
     setModalLoading(true);
 
+    // สำหรับ Admin ที่เลือก "ทุกหน่วยงาน" (targetDeptId = '')
+    // → บันทึกประเภทครุภัณฑ์นี้ให้ทุกส่วนราชการพร้อมกัน
+    const isAllDepts = profile?.role === 'admin' && !targetDeptId;
     const deptIdToSave = profile?.role === 'admin' ? targetDeptId : profile?.department_id;
 
-    if (!deptIdToSave) {
+    if (!isAllDepts && !deptIdToSave) {
       showToast('กรุณาระบุส่วนราชการ', 'warning');
       setModalLoading(false);
       return;
@@ -85,21 +88,33 @@ export default function CategoriesPage() {
 
     try {
       if (editingCategory) {
-        // Update
+        // แก้ไข: อัปเดตรายการที่เลือกอยู่ (1 รายการเท่านั้น)
         const { error } = await supabase
           .from('categories')
           .update({
             code,
             name,
             description,
-            department_id: deptIdToSave,
+            ...(deptIdToSave ? { department_id: deptIdToSave } : {}),
           })
           .eq('id', editingCategory.id);
 
         if (error) throw error;
-        showToast('แก้ไขหมวดหมู่สำเร็จ');
+        showToast('แก้ไขประเภทครุภัณฑ์สำเร็จ');
+      } else if (isAllDepts) {
+        // เพิ่มใหม่: insert ให้ทุกส่วนราชการพร้อมกัน
+        const insertRows = departments.map((dept) => ({
+          code,
+          name,
+          description,
+          department_id: dept.id,
+        }));
+
+        const { error } = await supabase.from('categories').insert(insertRows);
+        if (error) throw error;
+        showToast(`เพิ่มประเภทครุภัณฑ์ "${name}" ให้ครบทั้ง ${departments.length} ส่วนราชการแล้ว ✅`);
       } else {
-        // Insert
+        // เพิ่มใหม่: insert ส่วนราชการเดียว
         const { error } = await supabase.from('categories').insert({
           code,
           name,
@@ -108,7 +123,7 @@ export default function CategoriesPage() {
         });
 
         if (error) throw error;
-        showToast('เพิ่มหมวดหมู่สำเร็จ');
+        showToast('เพิ่มประเภทครุภัณฑ์สำเร็จ');
       }
       setModalOpen(false);
       fetchCategories();
@@ -138,7 +153,7 @@ export default function CategoriesPage() {
       if (countError) throw countError;
 
       if (count && count > 0) {
-        showToast(`ไม่สามารถลบได้ เนื่องจากมีครุภัณฑ์จำนวน ${count} รายการใช้งานหมวดหมู่นี้อยู่`, 'error');
+        showToast(`ไม่สามารถลบได้ เนื่องจากมีครุภัณฑ์จำนวน ${count} รายการใช้งานประเภทนี้อยู่`, 'error');
         return;
       }
 
@@ -149,10 +164,10 @@ export default function CategoriesPage() {
         .eq('id', categoryToDelete.id);
 
       if (error) throw error;
-      showToast('ลบหมวดหมู่เรียบร้อยแล้ว');
+      showToast('ลบประเภทครุภัณฑ์เรียบร้อยแล้ว');
       fetchCategories();
     } catch (err: any) {
-      showToast('ไม่สามารถลบหมวดหมู่ได้: ' + err.message, 'error');
+      showToast('ไม่สามารถลบประเภทครุภัณฑ์ได้: ' + err.message, 'error');
     } finally {
       setCategoryToDelete(null);
     }
@@ -164,17 +179,17 @@ export default function CategoriesPage() {
         <div>
           <h2 className="page-title">
             <FolderTree size={24} />
-            จัดการหมวดหมู่ครุภัณฑ์
+            จัดการประเภทครุภัณฑ์
           </h2>
           <p className="page-subtitle">
             {selectedDeptId
               ? `สังกัด: ${departments.find((d) => d.id === selectedDeptId)?.name}`
-              : 'แสดงหมวดหมู่ทั้งหมดของทุกส่วนราชการ'}
+              : 'แสดงประเภทครุภัณฑ์ทั้งหมดของทุกส่วนราชการ'}
           </p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal}>
           <Plus size={18} />
-          เพิ่มหมวดหมู่
+          เพิ่มประเภทครุภัณฑ์
         </button>
       </div>
 
@@ -183,20 +198,20 @@ export default function CategoriesPage() {
           {loading ? (
             <div className="loading">
               <Loader2 className="animate-spin text-primary" size={26} style={{ margin: '0 auto' }} />
-              <p style={{ marginTop: '8px' }}>กำลังโหลดหมวดหมู่...</p>
+              <p style={{ marginTop: '8px' }}>กำลังโหลดประเภทครุภัณฑ์...</p>
             </div>
           ) : categories.length === 0 ? (
             <div className="empty-state">
               <FolderTree />
-              <p>ยังไม่มีข้อมูลหมวดหมู่ในระบบ</p>
+              <p>ยังไม่มีข้อมูลประเภทครุภัณฑ์ในระบบ</p>
             </div>
           ) : (
             <div className="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: '120px' }}>รหัสหมวดหมู่</th>
-                    <th>ชื่อหมวดหมู่</th>
+                    <th style={{ width: '120px' }}>รหัสประเภท</th>
+                    <th>ชื่อประเภท</th>
                     <th>คำอธิบาย</th>
                     {profile?.role === 'admin' && <th>ส่วนราชการ</th>}
                     <th className="text-center" style={{ width: '120px' }}>จัดการ</th>
@@ -248,7 +263,7 @@ export default function CategoriesPage() {
           <div className="modal-header">
             <h3>
               <FolderTree size={20} />
-              {editingCategory ? 'แก้ไขหมวดหมู่ครุภัณฑ์' : 'เพิ่มหมวดหมู่ครุภัณฑ์'}
+              {editingCategory ? 'แก้ไขประเภทครุภัณฑ์' : 'เพิ่มประเภทครุภัณฑ์'}
             </h3>
             <button className="modal-close" onClick={() => setModalOpen(false)}>
               <X size={18} />
@@ -265,6 +280,7 @@ export default function CategoriesPage() {
                     onChange={(e) => setTargetDeptId(e.target.value)}
                     required
                   >
+                    <option value="">-- ทุกหน่วยงาน --</option>
                     {departments.map((dept) => (
                       <option key={dept.id} value={dept.id}>
                         {dept.name}
@@ -275,23 +291,61 @@ export default function CategoriesPage() {
               )}
 
               <div className="form-group">
-                <label className="form-label required">รหัสหมวดหมู่</label>
-                <input
-                  type="text"
+                <label className="form-label required">ประเภทครุภัณฑ์ (รหัสและชื่อ)</label>
+                <select
                   className="form-input"
-                  placeholder="เช่น CAT-001 หรือ 01"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCode(val);
+                    const nameMap: Record<string, string> = {
+                      '01': 'ครุภัณฑ์สำนักงาน',
+                      '02': 'ครุภัณฑ์การศึกษา',
+                      '03': 'ครุภัณฑ์ยานพาหนะและขนส่ง',
+                      '04': 'ครุภัณฑ์การเกษตร',
+                      '05': 'ครุภัณฑ์ก่อสร้าง',
+                      '06': 'ครุภัณฑ์ไฟฟ้าและวิทยุ',
+                      '07': 'ครุภัณฑ์โฆษณาและเผยแพร่',
+                      '08': 'ครุภัณฑ์วิทยาศาสตร์หรือการแพทย์',
+                      '09': 'ครุภัณฑ์งานบ้านงานครัว',
+                      '10': 'ครุภัณฑ์โรงงาน',
+                      '11': 'ครุภัณฑ์กีฬา',
+                      '12': 'ครุภัณฑ์สำรวจ',
+                      '13': 'ครุภัณฑ์ดนตรีและนาฏศิลป์',
+                      '14': 'ครุภัณฑ์คอมพิวเตอร์หรืออิเล็กทรอนิกส์',
+                      '15': 'ครุภัณฑ์สนาม',
+                      '16': 'ครุภัณฑ์อื่น',
+                    };
+                    if (nameMap[val]) setName(nameMap[val]);
+                  }}
                   required
-                />
+                >
+                  <option value="">-- เลือกประเภทครุภัณฑ์ --</option>
+                  <option value="01">01 ครุภัณฑ์สำนักงาน</option>
+                  <option value="02">02 ครุภัณฑ์การศึกษา</option>
+                  <option value="03">03 ครุภัณฑ์ยานพาหนะและขนส่ง</option>
+                  <option value="04">04 ครุภัณฑ์การเกษตร</option>
+                  <option value="05">05 ครุภัณฑ์ก่อสร้าง</option>
+                  <option value="06">06 ครุภัณฑ์ไฟฟ้าและวิทยุ</option>
+                  <option value="07">07 ครุภัณฑ์โฆษณาและเผยแพร่</option>
+                  <option value="08">08 ครุภัณฑ์วิทยาศาสตร์หรือการแพทย์</option>
+                  <option value="09">09 ครุภัณฑ์งานบ้านงานครัว</option>
+                  <option value="10">10 ครุภัณฑ์โรงงาน</option>
+                  <option value="11">11 ครุภัณฑ์กีฬา</option>
+                  <option value="12">12 ครุภัณฑ์สำรวจ</option>
+                  <option value="13">13 ครุภัณฑ์ดนตรีและนาฏศิลป์</option>
+                  <option value="14">14 ครุภัณฑ์คอมพิวเตอร์หรืออิเล็กทรอนิกส์</option>
+                  <option value="15">15 ครุภัณฑ์สนาม</option>
+                  <option value="16">16 ครุภัณฑ์อื่น</option>
+                </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label required">ชื่อหมวดหมู่</label>
+                <label className="form-label required">ชื่อประเภท</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="เช่น ครุภัณฑ์สำนักงาน"
+                  placeholder="กรอกชื่อประเภทครุภัณฑ์"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -334,8 +388,8 @@ export default function CategoriesPage() {
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={deleteConfirmOpen}
-        title="ยืนยันการลบหมวดหมู่"
-        message={`คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่ "${categoryToDelete?.name}"? การดำเนินการนี้ไม่สามารถย้อนกลับได้`}
+        title="ยืนยันการลบประเภทครุภัณฑ์"
+        message={`คุณแน่ใจหรือไม่ที่จะลบประเภทครุภัณฑ์ "${categoryToDelete?.name}"? การดำเนินการนี้ไม่สามารถย้อนกลับได้`}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirmOpen(false)}
       />

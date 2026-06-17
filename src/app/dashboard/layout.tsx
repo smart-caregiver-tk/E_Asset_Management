@@ -14,12 +14,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
+    // redirect เฉพาะเมื่อโหลดเสร็จแล้วและยืนยันว่าไม่มี user จริงๆ
     if (!loading && !user) {
       router.replace('/login');
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  // ระหว่างโหลด session → แสดง loading แทนการ redirect ทันที
+  if (loading) {
     return (
       <div
         style={{
@@ -34,6 +36,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <Loader2 className="animate-spin text-primary" size={36} />
         <span style={{ color: 'var(--text-mid)', fontSize: '0.9rem' }}>กำลังโหลดระบบข้อมูล...</span>
+      </div>
+    );
+  }
+
+  // โหลดเสร็จแล้วแต่ไม่มี user → แสดง loading สั้นๆ ขณะรอ redirect
+  if (!user) {
+    return (
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--bg)',
+        }}
+      >
+        <Loader2 className="animate-spin text-primary" size={36} />
       </div>
     );
   }

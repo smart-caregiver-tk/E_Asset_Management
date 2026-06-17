@@ -43,44 +43,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Get current session
+    let isMounted = true;
+
+    // Get current session on first load
     async function getSession() {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
+      if (!isMounted) return;
+
       if (session) {
         setUser(session.user);
-        // Fetch profile
         const { data: prof, error } = await supabase
           .from('profiles')
           .select('*, departments(*)')
           .eq('id', session.user.id)
           .single();
 
+        if (!isMounted) return;
+
         if (!error && prof) {
           const profileWithDept = prof as ProfileWithDepartment;
           setProfile(profileWithDept);
-          // Set initial active department
           if (profileWithDept.role === 'department') {
             setSelectedDeptId(profileWithDept.department_id);
           } else {
-            setSelectedDeptId(null); // Admin sees all by default
+            setSelectedDeptId(null);
           }
         }
       } else {
+        // ไม่มี session จริงๆ → redirect ไป login
         setUser(null);
         setProfile(null);
-        if (pathname !== '/login') {
-          router.replace('/login');
-        }
+        router.replace('/login');
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
 
     getSession();
 
-    // Listen for auth state changes
+    // Listen for auth state changes (login/logout/token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
+      // ไม่ต้อง loading ทุก event — เฉพาะกรณีที่ session หายจริงๆ
+      if (event === 'TOKEN_REFRESHED') return; // token refresh ปกติ ไม่ต้องทำอะไร
+
       if (session) {
         setUser(session.user);
         const { data: prof } = await supabase
@@ -99,21 +104,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (pathname === '/login') {
           router.replace('/dashboard');
         }
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        // Logout จริงๆ เท่านั้นที่ redirect
         setUser(null);
         setProfile(null);
         setSelectedDeptId(null);
-        if (pathname !== '/login') {
-          router.replace('/login');
-        }
+        router.replace('/login');
       }
-      setLoading(false);
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [router, pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← รันครั้งเดียวตอน mount เท่านั้น ไม่ re-run เมื่อ pathname เปลี่ยน
+
 
   const logout = async () => {
     setLoading(true);

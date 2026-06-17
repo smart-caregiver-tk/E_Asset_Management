@@ -388,7 +388,7 @@ export default function AssetsPage() {
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
-                <option value="">ทุกหมวดหมู่</option>
+                <option value="">ทุกประเภท</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}

@@ -41,7 +41,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
   const menuItems = [
     { name: 'แดชบอร์ด', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'จัดการหมวดหมู่', path: '/dashboard/categories', icon: FolderTree },
+    { name: 'จัดการประเภทครุภัณฑ์', path: '/dashboard/categories', icon: FolderTree },
     { name: 'จัดเก็บครุภัณฑ์', path: '/dashboard/assets', icon: Package },
     { name: 'บันทึกซ่อมบำรุง', path: '/dashboard/repairs', icon: Wrench },
     { name: 'ค้นหาครุภัณฑ์', path: '/dashboard/search', icon: Search },
