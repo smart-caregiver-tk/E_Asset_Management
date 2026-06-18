@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { getTripLogs, getVehicles, getDrivers, addTripLog, updateTripLog, updateVehicle } from '@/lib/vehicleService';
+import { getTripLogs, getVehicles, getDrivers, addTripLog, updateTripLog, updateVehicle, deleteTripLog, checkTripDependencies, TripDependencies } from '@/lib/vehicleService';
 import { TripLog, Vehicle, Driver } from '@/types/vehicle_types';
 import { getVehicleTypeIcon, getTripStatus, formatNumber, formatThaiDateShort, formatTime, getTodayISO, getCurrentTime } from '@/lib/vehicleUtils';
 import PrintForm3 from '@/components/PrintForm3';
@@ -26,7 +26,8 @@ import {
   Save,
   Building2,
   Play,
-  Check
+  Check,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function VehiclesTripsPage() {
@@ -46,6 +47,13 @@ export default function VehiclesTripsPage() {
   
   const [showPrint4, setShowPrint4] = useState(false);
   const [printVehicleId, setPrintVehicleId] = useState('');
+
+  // Delete states
+  const [deleteTarget, setDeleteTarget] = useState<TripLog | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [depsInfo, setDepsInfo] = useState<TripDependencies | null>(null);
+  const [checkingDeps, setCheckingDeps] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [form, setForm] = useState({
     vehicle_id: '',
@@ -203,6 +211,42 @@ export default function VehiclesTripsPage() {
 
   const updateField = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDeleteClick = async (trip: TripLog) => {
+    setDeleteTarget(trip);
+    setDepsInfo(null);
+    setCheckingDeps(true);
+    try {
+      const deps = await checkTripDependencies(trip.id);
+      setDepsInfo(deps);
+      setShowDeleteConfirm(true);
+    } catch (err) {
+      console.error('checkTripDependencies error:', err);
+      alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลอ้างอิง');
+    } finally {
+      setCheckingDeps(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const ok = await deleteTripLog(deleteTarget.id);
+      if (ok) {
+        setShowDeleteConfirm(false);
+        setDeleteTarget(null);
+        loadData();
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (err) {
+      console.error('deleteTripLog error:', err);
+      alert('เกิดข้อผิดพลาด');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Status transition actions
@@ -425,11 +469,18 @@ export default function VehiclesTripsPage() {
 
                       <button
                         className="btn btn-danger"
-                        disabled
-                        title="ระบบลบข้อมูลปิดการใช้งานชั่วคราวใน Phase 3A"
-                        style={{ opacity: 0.5, cursor: 'not-allowed', padding: '6px' }}
+                        disabled={profile?.role !== 'admin' || checkingDeps}
+                        title={profile?.role !== 'admin' ? 'เฉพาะ Admin เท่านั้นที่สามารถลบข้อมูลได้' : 'ลบใบขอใช้รถยนต์'}
+                        style={{
+                          opacity: profile?.role !== 'admin' ? 0.5 : 1,
+                          cursor: profile?.role !== 'admin' ? 'not-allowed' : 'pointer',
+                          padding: '6px'
+                        }}
+                        onClick={() => profile?.role === 'admin' && handleDeleteClick(trip)}
                       >
-                        <Trash2 size={14} />
+                        {checkingDeps && deleteTarget?.id === trip.id
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : <Trash2 size={14} />}
                       </button>
                     </div>
 
@@ -722,6 +773,50 @@ export default function VehiclesTripsPage() {
 
       {showPrint4 && (
         <PrintForm4 vehicleId={printVehicleId} onClose={() => setShowPrint4(false)} />
+      )}
+      {/* Delete Confirm Dialog */}
+      {showDeleteConfirm && deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              {depsInfo && depsInfo.total > 0 ? (
+                <ShieldAlert size={28} style={{ color: 'var(--danger)' }} />
+              ) : (
+                <AlertTriangle size={28} style={{ color: 'var(--warning)' }} />
+              )}
+              <h3 style={{ margin: 0, fontWeight: 700, color: 'var(--text-dark)' }}>ยืนยันการลบใบขอใช้รถ</h3>
+            </div>
+            
+            <p style={{ color: 'var(--text-dark)', marginBottom: '6px' }}>
+              คุณแน่ใจหรือไม่ที่จะลบรายการขอใช้รถยนต์นี้:
+            </p>
+            <p style={{ fontWeight: 700, color: 'var(--danger)', fontSize: '1rem', marginBottom: '12px' }}>
+              ปลายทาง: «{deleteTarget.destination}» ({deleteTarget.trip_no || '-'})
+            </p>
+
+            {depsInfo && depsInfo.fuel > 0 && (
+              <div style={{ background: '#fff5f5', borderLeft: '4px solid var(--danger)', padding: '12px', borderRadius: '4px', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: '#c53030' }}>
+                  ⚠️ ข้อควรระวัง (จุดที่ต้องระวัง):
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.825rem', color: '#742a2a', lineHeight: '1.4' }}>
+                  พบประวัติการเติมน้ำมันที่เชื่อมโยงอยู่กับรายการเดินทางนี้จำนวน <strong>{depsInfo.fuel} รายการ</strong> 
+                  หากทำการลบ รายการเติมน้ำมันดังกล่าวจะไม่ถูกลบ แต่จะถูกยกเลิกการเชื่อมโยงกับรายการขอใช้รถคันนี้ (ตั้งค่าเป็น NULL)
+                </p>
+              </div>
+            )}
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '20px' }}>
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button className="btn btn-outline" onClick={() => { setShowDeleteConfirm(false); setDeleteTarget(null); }} disabled={deleting}>ยกเลิก</button>
+              <button className="btn btn-danger" onClick={handleDeleteConfirm} disabled={deleting}>
+                {deleting ? <><Loader2 size={14} className="animate-spin" /> กำลังลบ...</> : <><Trash2 size={14} /> ยืนยันลบ</>}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

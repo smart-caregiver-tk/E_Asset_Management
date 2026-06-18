@@ -270,6 +270,25 @@ export async function updateTripLog(id: string, updates: Partial<TripLog>): Prom
   return data;
 }
 
+export interface TripDependencies {
+  fuel: number;
+  total: number;
+}
+
+export async function checkTripDependencies(tripId: string): Promise<TripDependencies> {
+  const { count, error } = await supabase
+    .from('vehicle_fuel_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('trip_id', tripId);
+
+  const fuel = count ?? 0;
+
+  return {
+    fuel,
+    total: fuel,
+  };
+}
+
 export async function deleteTripLog(id: string): Promise<boolean> {
   const { error } = await supabase.from('vehicle_trips').delete().eq('id', id);
   if (error) {
