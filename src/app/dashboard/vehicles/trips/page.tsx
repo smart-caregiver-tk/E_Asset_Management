@@ -7,6 +7,7 @@ import { TripLog, Vehicle, Driver } from '@/types/vehicle_types';
 import { getVehicleTypeIcon, getTripStatus, formatNumber, formatThaiDateShort, formatTime, getTodayISO, getCurrentTime } from '@/lib/vehicleUtils';
 import PrintForm3 from '@/components/PrintForm3';
 import PrintForm4 from '@/components/PrintForm4';
+import TimeSelect24h from '@/components/TimeSelect24h';
 import {
   ClipboardList,
   Plus,
@@ -595,12 +596,11 @@ export default function VehiclesTripsPage() {
                   </div>
                   <div>
                     <label className="form-label" style={{ fontWeight: 600 }}>เวลาเดินทางออก *</label>
-                    <input
-                      type="time"
-                      className="input-field"
+                    <TimeSelect24h
                       value={form.depart_time}
-                      onChange={e => updateField('depart_time', e.target.value)}
+                      onChange={val => updateField('depart_time', val)}
                       required
+                      className="input-field"
                     />
                   </div>
 
@@ -615,11 +615,10 @@ export default function VehiclesTripsPage() {
                   </div>
                   <div>
                     <label className="form-label">เวลาเดินทางกลับ</label>
-                    <input
-                      type="time"
-                      className="input-field"
+                    <TimeSelect24h
                       value={form.return_time}
-                      onChange={e => updateField('return_time', e.target.value)}
+                      onChange={val => updateField('return_time', val)}
+                      className="input-field"
                     />
                   </div>
                 </div>

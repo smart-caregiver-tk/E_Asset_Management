@@ -6,6 +6,7 @@ import { getIncidentReports, getVehicles, getDrivers, addIncidentReport } from '
 import { IncidentReport, Vehicle, Driver } from '@/types/vehicle_types';
 import { getVehicleTypeIcon, formatThaiDate, formatThaiDateShort, formatTime } from '@/lib/vehicleUtils';
 import PrintForm5 from '@/components/PrintForm5';
+import TimeSelect24h from '@/components/TimeSelect24h';
 import {
   AlertTriangle,
   Plus,
@@ -311,11 +312,10 @@ export default function VehiclesIncidentsPage() {
                   </div>
                   <div>
                     <label className="form-label">เวลาที่เกิดอุบัติเหตุ</label>
-                    <input
-                      type="time"
-                      className="input-field"
+                    <TimeSelect24h
                       value={form.incident_time}
-                      onChange={e => updateField('incident_time', e.target.value)}
+                      onChange={val => updateField('incident_time', val)}
+                      className="input-field"
                     />
                   </div>
                   <div>
