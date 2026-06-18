@@ -155,6 +155,36 @@ export async function updateDriver(id: string, updates: Partial<Driver>): Promis
   return data;
 }
 
+export interface DriverDependencies {
+  trips: number;
+  maintenance: number;
+  incidents: number;
+  fuel: number;
+  total: number;
+}
+
+export async function checkDriverDependencies(driverId: string): Promise<DriverDependencies> {
+  const [tripsRes, maintenanceRes, incidentsRes, fuelRes] = await Promise.all([
+    supabase.from('vehicle_trips').select('id', { count: 'exact', head: true }).eq('driver_id', driverId),
+    supabase.from('vehicle_maintenance_logs').select('id', { count: 'exact', head: true }).eq('driver_id', driverId),
+    supabase.from('vehicle_incident_reports').select('id', { count: 'exact', head: true }).eq('driver_id', driverId),
+    supabase.from('vehicle_fuel_logs').select('id', { count: 'exact', head: true }).eq('driver_id', driverId),
+  ]);
+
+  const trips = tripsRes.count ?? 0;
+  const maintenance = maintenanceRes.count ?? 0;
+  const incidents = incidentsRes.count ?? 0;
+  const fuel = fuelRes.count ?? 0;
+
+  return {
+    trips,
+    maintenance,
+    incidents,
+    fuel,
+    total: trips + maintenance + incidents + fuel,
+  };
+}
+
 export async function deleteDriver(id: string): Promise<boolean> {
   const { error } = await supabase.from('vehicle_drivers').delete().eq('id', id);
   if (error) {

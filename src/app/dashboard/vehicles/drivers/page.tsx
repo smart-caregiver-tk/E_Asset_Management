@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { getDrivers, addDriver, updateDriver } from '@/lib/vehicleService';
+import { getDrivers, addDriver, updateDriver, deleteDriver, checkDriverDependencies, DriverDependencies } from '@/lib/vehicleService';
 import { Driver } from '@/types/vehicle_types';
 import { formatThaiDate, formatThaiDateShort, isExpiringSoon, isExpired } from '@/lib/vehicleUtils';
 import {
@@ -18,7 +18,8 @@ import {
   X,
   Save,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function VehiclesDriversPage() {
@@ -30,6 +31,14 @@ export default function VehiclesDriversPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Delete states
+  const [deleteTarget, setDeleteTarget] = useState<Driver | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDepsBlocked, setShowDepsBlocked] = useState(false);
+  const [depsInfo, setDepsInfo] = useState<DriverDependencies | null>(null);
+  const [checkingDeps, setCheckingDeps] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     name: '',
     employee_id: '',
@@ -136,6 +145,46 @@ export default function VehiclesDriversPage() {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleDeleteClick = async (d: Driver) => {
+    setDeleteTarget(d);
+    setDepsInfo(null);
+    setCheckingDeps(true);
+    try {
+      const deps = await checkDriverDependencies(d.id);
+      setDepsInfo(deps);
+      if (deps.total > 0) {
+        setShowDepsBlocked(true);
+      } else {
+        setShowDeleteConfirm(true);
+      }
+    } catch (err) {
+      console.error('checkDriverDependencies error:', err);
+      alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลอ้างอิง');
+    } finally {
+      setCheckingDeps(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const ok = await deleteDriver(deleteTarget.id);
+      if (ok) {
+        setShowDeleteConfirm(false);
+        setDeleteTarget(null);
+        loadData();
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (err) {
+      console.error('deleteDriver error:', err);
+      alert('เกิดข้อผิดพลาด');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -235,11 +284,18 @@ export default function VehiclesDriversPage() {
                   </button>
                   <button
                     className="btn btn-danger"
-                    disabled
-                    title="ระบบลบข้อมูลปิดการใช้งานชั่วคราวใน Phase 3A"
-                    style={{ opacity: 0.5, cursor: 'not-allowed', padding: '6px 10px' }}
+                    disabled={profile?.role !== 'admin' || checkingDeps}
+                    title={profile?.role !== 'admin' ? 'เฉพาะ Admin เท่านั้นที่สามารถลบข้อมูลได้' : 'ลบพนักงานขับรถ'}
+                    style={{
+                      opacity: profile?.role !== 'admin' ? 0.5 : 1,
+                      cursor: profile?.role !== 'admin' ? 'not-allowed' : 'pointer',
+                      padding: '6px 10px'
+                    }}
+                    onClick={() => profile?.role === 'admin' && handleDeleteClick(d)}
                   >
-                    <Trash2 size={14} />
+                    {checkingDeps && deleteTarget?.id === d.id
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <Trash2 size={14} />}
                   </button>
                 </div>
               </div>
@@ -398,6 +454,60 @@ export default function VehiclesDriversPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dependency Blocked Dialog */}
+      {showDepsBlocked && deleteTarget && depsInfo && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <ShieldAlert size={28} style={{ color: 'var(--danger)' }} />
+              <h3 style={{ margin: 0, color: 'var(--danger)', fontWeight: 700 }}>ไม่สามารถลบได้</h3>
+            </div>
+            <p style={{ color: 'var(--text-dark)', marginBottom: '12px' }}>
+              พนักงาน <strong>«{deleteTarget.name}»</strong> มีข้อมูลอ้างอิงในระบบ ไม่สามารถลบได้:
+            </p>
+            <ul style={{ paddingLeft: '20px', color: 'var(--text-dark)', lineHeight: 2 }}>
+              {depsInfo.trips > 0 && <li>บันทึกการใช้รถ (trips): <strong>{depsInfo.trips} รายการ</strong></li>}
+              {depsInfo.maintenance > 0 && <li>บันทึกซ่อมบำรุง: <strong>{depsInfo.maintenance} รายการ</strong></li>}
+              {depsInfo.incidents > 0 && <li>รายงานอุบัติเหตุ: <strong>{depsInfo.incidents} รายการ</strong></li>}
+              {depsInfo.fuel > 0 && <li>บันทึกเชื้อเพลิง: <strong>{depsInfo.fuel} รายการ</strong></li>}
+            </ul>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginTop: '12px' }}>
+              หากต้องการลบ กรุณาลบข้อมูลที่อ้างอิงถึงพนักงานคนนี้ออกจากทุกระบบก่อน
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button className="btn btn-outline" onClick={() => { setShowDepsBlocked(false); setDeleteTarget(null); }}>ตกลง</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Dialog */}
+      {showDeleteConfirm && deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', maxWidth: '400px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <AlertTriangle size={28} style={{ color: 'var(--warning)' }} />
+              <h3 style={{ margin: 0, fontWeight: 700, color: 'var(--text-dark)' }}>ยืนยันการลบ</h3>
+            </div>
+            <p style={{ color: 'var(--text-dark)', marginBottom: '6px' }}>
+              คุณแน่ใจหรือไม่ที่จะลบพนักงานขับรถ:
+            </p>
+            <p style={{ fontWeight: 700, color: 'var(--danger)', fontSize: '1rem', marginBottom: '16px' }}>
+              «{deleteTarget.name}» (ตำแหน่ง: {deleteTarget.employee_id || '-'})
+            </p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '20px' }}>
+              การดำเนินการนี้ไม่สามารถยกเลิกได้
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button className="btn btn-outline" onClick={() => { setShowDeleteConfirm(false); setDeleteTarget(null); }} disabled={deleting}>ยกเลิก</button>
+              <button className="btn btn-danger" onClick={handleDeleteConfirm} disabled={deleting}>
+                {deleting ? <><Loader2 size={14} className="animate-spin" /> กำลังลบ...</> : <><Trash2 size={14} /> ยืนยันลบ</>}
+              </button>
+            </div>
           </div>
         </div>
       )}
