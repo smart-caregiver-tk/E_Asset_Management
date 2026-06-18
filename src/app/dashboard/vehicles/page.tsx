@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getVehicles, getTripLogs, getFuelLogs, getMaintenanceLogs } from '@/lib/vehicleService';
 import { Vehicle, TripLog, FuelLog, MaintenanceLog } from '@/types/vehicle_types';
-import { formatNumber, formatCurrency, getVehicleTypeIcon, getVehicleStatus, getTripStatus, isExpiringSoon, isExpired, getTodayISO } from '@/lib/vehicleUtils';
+import { formatNumber, formatCurrency, formatThaiDateShort, getVehicleTypeIcon, getVehicleStatus, getTripStatus, isExpiringSoon, isExpired, getTodayISO } from '@/lib/vehicleUtils';
 import {
   Car,
   CheckCircle,
@@ -207,22 +207,22 @@ export default function VehiclesDashboardPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
                 {expiredInsurance.map(v => (
                   <div key={`exp-i-${v.id}`} style={{ padding: '10px 12px', background: 'var(--danger-light)', borderLeft: '4px solid var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-                    <strong style={{ color: 'var(--danger)' }}>🚨 ประกันหมดอายุแล้ว:</strong> {v.vehicle_name} ({v.license_plate}) - หมดเมื่อ {v.insurance_expire ? new Date(v.insurance_expire).toLocaleDateString('th-TH') : '-'}
+                    <strong style={{ color: 'var(--danger)' }}>🚨 ประกันหมดอายุแล้ว:</strong> {v.vehicle_name} ({v.license_plate}) - หมดเมื่อ {formatThaiDateShort(v.insurance_expire)}
                   </div>
                 ))}
                 {expiredTax.map(v => (
                   <div key={`exp-t-${v.id}`} style={{ padding: '10px 12px', background: 'var(--danger-light)', borderLeft: '4px solid var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-                    <strong style={{ color: 'var(--danger)' }}>🚨 ภาษีหมดอายุแล้ว:</strong> {v.vehicle_name} ({v.license_plate}) - หมดเมื่อ {v.tax_expire ? new Date(v.tax_expire).toLocaleDateString('th-TH') : '-'}
+                    <strong style={{ color: 'var(--danger)' }}>🚨 ภาษีหมดอายุแล้ว:</strong> {v.vehicle_name} ({v.license_plate}) - หมดเมื่อ {formatThaiDateShort(v.tax_expire)}
                   </div>
                 ))}
                 {expiringInsurance.map(v => (
                   <div key={`warn-i-${v.id}`} style={{ padding: '10px 12px', background: 'var(--warning-light)', borderLeft: '4px solid var(--warning)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-                    <strong style={{ color: 'var(--warning)' }}>⚠️ ประกันใกล้หมดอายุ:</strong> {v.vehicle_name} ({v.license_plate}) - หมดอายุวันที่ {v.insurance_expire ? new Date(v.insurance_expire).toLocaleDateString('th-TH') : '-'}
+                    <strong style={{ color: 'var(--warning)' }}>⚠️ ประกันใกล้หมดอายุ:</strong> {v.vehicle_name} ({v.license_plate}) - หมดอายุวันที่ {formatThaiDateShort(v.insurance_expire)}
                   </div>
                 ))}
                 {expiringTax.map(v => (
                   <div key={`warn-t-${v.id}`} style={{ padding: '10px 12px', background: 'var(--warning-light)', borderLeft: '4px solid var(--warning)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-                    <strong style={{ color: 'var(--warning)' }}>⚠️ ภาษีใกล้หมดอายุ:</strong> {v.vehicle_name} ({v.license_plate}) - หมดอายุวันที่ {v.tax_expire ? new Date(v.tax_expire).toLocaleDateString('th-TH') : '-'}
+                    <strong style={{ color: 'var(--warning)' }}>⚠️ ภาษีใกล้หมดอายุ:</strong> {v.vehicle_name} ({v.license_plate}) - หมดอายุวันที่ {formatThaiDateShort(v.tax_expire)}
                   </div>
                 ))}
               </div>
@@ -265,7 +265,7 @@ export default function VehiclesDashboardPage() {
                           <td>
                             <div style={{ fontWeight: 600 }}>{trip.destination}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                              ผู้ขอ: {trip.user_name} | วันเดินทาง: {trip.depart_date ? new Date(trip.depart_date).toLocaleDateString('th-TH') : '-'}
+                              ผู้ขอ: {trip.user_name} | วันเดินทาง: {formatThaiDateShort(trip.depart_date)}
                             </div>
                           </td>
                           <td>

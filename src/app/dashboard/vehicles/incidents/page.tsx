@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getIncidentReports, getVehicles, getDrivers, addIncidentReport } from '@/lib/vehicleService';
 import { IncidentReport, Vehicle, Driver } from '@/types/vehicle_types';
-import { getVehicleTypeIcon, formatThaiDate, formatTime } from '@/lib/vehicleUtils';
+import { getVehicleTypeIcon, formatThaiDate, formatThaiDateShort, formatTime } from '@/lib/vehicleUtils';
 import PrintForm5 from '@/components/PrintForm5';
 import {
   AlertTriangle,
@@ -218,7 +218,7 @@ export default function VehiclesIncidentsPage() {
                         </p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px', marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                          <span>📅 <strong>วันเวลาเกิดเหตุ:</strong> {report.incident_date ? new Date(report.incident_date).toLocaleDateString('th-TH') : '-'} เวลา {report.incident_time || '-'} น.</span>
+                          <span>📅 <strong>วันเวลาเกิดเหตุ:</strong> {formatThaiDateShort(report.incident_date)} เวลา {formatTime(report.incident_time)}</span>
                           <span>📍 <strong>สถานที่เกิดเหตุ:</strong> {report.incident_location || '-'}</span>
                           {report.opponent_vehicle && (
                             <span style={{ color: 'var(--danger)', fontWeight: 600 }}>🚗 <strong>คู่กรณี:</strong> {report.opponent_vehicle} ({report.opponent_plate || 'ไม่ทราบทะเบียน'})</span>

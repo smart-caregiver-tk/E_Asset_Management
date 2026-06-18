@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getTripLogs, getVehicles, getDrivers, addTripLog, updateTripLog, updateVehicle } from '@/lib/vehicleService';
 import { TripLog, Vehicle, Driver } from '@/types/vehicle_types';
-import { getVehicleTypeIcon, getTripStatus, formatNumber, getTodayISO, getCurrentTime } from '@/lib/vehicleUtils';
+import { getVehicleTypeIcon, getTripStatus, formatNumber, formatThaiDateShort, formatTime, getTodayISO, getCurrentTime } from '@/lib/vehicleUtils';
 import PrintForm3 from '@/components/PrintForm3';
 import PrintForm4 from '@/components/PrintForm4';
 import {
@@ -361,9 +361,9 @@ export default function VehiclesTripsPage() {
                         </p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px', marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                          <span>📅 <strong>เวลาออก:</strong> {trip.depart_date ? new Date(trip.depart_date).toLocaleDateString('th-TH') : '-'} {trip.depart_time || '-'}</span>
+                          <span>📅 <strong>เวลาออก:</strong> {formatThaiDateShort(trip.depart_date)} {formatTime(trip.depart_time)}</span>
                           {trip.return_date && (
-                            <span>🏠 <strong>เวลากลับ:</strong> {new Date(trip.return_date).toLocaleDateString('th-TH')} {trip.return_time || '-'}</span>
+                            <span>🏠 <strong>เวลากลับ:</strong> {formatThaiDateShort(trip.return_date)} {formatTime(trip.return_time)}</span>
                           )}
                           <span>🔢 <strong>ไมล์ออก:</strong> {formatNumber(trip.mileage_out)} กม.</span>
                           {trip.mileage_in && (

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getFuelLogs, getVehicles, addFuelLog, getTripLogs, updateVehicle } from '@/lib/vehicleService';
 import { FuelLog, Vehicle, TripLog } from '@/types/vehicle_types';
-import { formatCurrency, formatNumber, getTodayISO } from '@/lib/vehicleUtils';
+import { formatCurrency, formatNumber, formatThaiDateShort, getTodayISO } from '@/lib/vehicleUtils';
 import {
   Fuel,
   Plus,
@@ -243,7 +243,7 @@ export default function VehiclesFuelPage() {
                         </p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px', marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                          <span>📅 <strong>วันที่เติม:</strong> {log.fuel_date ? new Date(log.fuel_date).toLocaleDateString('th-TH') : '-'}</span>
+                          <span>📅 <strong>วันที่เติม:</strong> {formatThaiDateShort(log.fuel_date)}</span>
                           <span>🔢 <strong>เลขไมล์ขณะเติม:</strong> {formatNumber(log.mileage)} กม.</span>
                           {log.receipt_no && (
                             <span>🧾 <strong>ใบเสร็จเลขที่:</strong> {log.receipt_no}</span>

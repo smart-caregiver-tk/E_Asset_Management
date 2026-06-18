@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getVehicles, addVehicle, updateVehicle, deleteVehicle, checkVehicleDependencies, VehicleDependencies } from '@/lib/vehicleService';
 import { Vehicle } from '@/types/vehicle_types';
-import { VEHICLE_TYPES, VEHICLE_STATUSES, FUEL_TYPES, formatNumber, formatThaiDate, getVehicleTypeName, getVehicleTypeIcon, getVehicleStatus } from '@/lib/vehicleUtils';
+import { VEHICLE_TYPES, VEHICLE_STATUSES, FUEL_TYPES, formatNumber, formatThaiDate, formatThaiDateShort, getVehicleTypeName, getVehicleTypeIcon, getVehicleStatus } from '@/lib/vehicleUtils';
 import {
   Car,
   Plus,
@@ -350,8 +350,8 @@ export default function VehiclesCarsPage() {
                   </div>
 
                   <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', color: 'var(--text-light)' }}>
-                    <span>ประกันหมด: {v.insurance_expire ? new Date(v.insurance_expire).toLocaleDateString('th-TH') : '-'}</span>
-                    <span>ภาษีหมด: {v.tax_expire ? new Date(v.tax_expire).toLocaleDateString('th-TH') : '-'}</span>
+                    <span>ประกันหมด: {formatThaiDateShort(v.insurance_expire)}</span>
+                    <span>ภาษีหมด: {formatThaiDateShort(v.tax_expire)}</span>
                   </div>
                 </div>
 

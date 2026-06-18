@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getDrivers, addDriver, updateDriver } from '@/lib/vehicleService';
 import { Driver } from '@/types/vehicle_types';
-import { formatThaiDate, isExpiringSoon, isExpired } from '@/lib/vehicleUtils';
+import { formatThaiDate, formatThaiDateShort, isExpiringSoon, isExpired } from '@/lib/vehicleUtils';
 import {
   Users,
   Plus,
@@ -220,7 +220,7 @@ export default function VehiclesDriversPage() {
                     }}>
                       <Calendar size={14} />
                       <span>
-                        วันหมดอายุใบขับขี่: {d.license_expire ? new Date(d.license_expire).toLocaleDateString('th-TH') : '-'}
+                        วันหมดอายุใบขับขี่: {formatThaiDateShort(d.license_expire)}
                         {licenseExpired && ' ⚠️ หมดอายุแล้ว!'}
                         {licenseExpiring && ' ⚠️ ใกล้หมดอายุ'}
                       </span>

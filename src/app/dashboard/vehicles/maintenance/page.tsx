@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { getMaintenanceLogs, getVehicles, addMaintenanceLog, updateMaintenanceLog, updateVehicle } from '@/lib/vehicleService';
 import { MaintenanceLog, Vehicle } from '@/types/vehicle_types';
-import { formatCurrency, formatNumber, getTodayISO } from '@/lib/vehicleUtils';
+import { formatCurrency, formatNumber, formatThaiDateShort, getTodayISO } from '@/lib/vehicleUtils';
 import PrintForm6 from '@/components/PrintForm6';
 import {
   Wrench,
@@ -260,7 +260,7 @@ export default function VehiclesMaintenancePage() {
                         </p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px', marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                          <span>📅 <strong>วันที่ตรวจรับงาน:</strong> {log.received_date ? new Date(log.received_date).toLocaleDateString('th-TH') : '-'}</span>
+                          <span>📅 <strong>วันที่ตรวจรับงาน:</strong> {formatThaiDateShort(log.received_date)}</span>
                           <span>🔢 <strong>เลขไมล์ขณะส่งซ่อม:</strong> {formatNumber(log.mileage_at_repair)} กม.</span>
                           <span style={{ color: 'var(--danger)', fontWeight: 600 }}>💰 <strong>ค่าใช้จ่าย:</strong> {formatCurrency(Number(log.cost))} บาท</span>
                         </div>
