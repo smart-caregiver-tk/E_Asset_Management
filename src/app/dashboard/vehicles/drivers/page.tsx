@@ -184,7 +184,7 @@ export default function VehiclesDriversPage() {
                       </div>
                       <div>
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-dark)', margin: 0 }}>{d.name}</h4>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>รหัส: {d.employee_id || '-'}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>ตำแหน่ง: {d.employee_id || '-'}</span>
                       </div>
                     </div>
                     <span className={`badge-status ${d.status === 'active' ? 'badge-use' : 'badge-sell'}`} style={{ fontWeight: 600 }}>
@@ -274,11 +274,11 @@ export default function VehiclesDriversPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label className="form-label">รหัสพนักงาน</label>
+                    <label className="form-label">ตำแหน่ง</label>
                     <input
                       type="text"
                       className="input-field"
-                      placeholder="เช่น EMP-009"
+                      placeholder="เช่น พนักงานขับรถ, ผู้ช่วยช่าง"
                       value={form.employee_id}
                       onChange={e => updateField('employee_id', e.target.value)}
                     />
