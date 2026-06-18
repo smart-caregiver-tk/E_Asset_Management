@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { getVehicles, addVehicle, updateVehicle } from '@/lib/vehicleService';
+import { getVehicles, addVehicle, updateVehicle, deleteVehicle, checkVehicleDependencies, VehicleDependencies } from '@/lib/vehicleService';
 import { Vehicle } from '@/types/vehicle_types';
 import { VEHICLE_TYPES, VEHICLE_STATUSES, FUEL_TYPES, formatNumber, formatThaiDate, getVehicleTypeName, getVehicleTypeIcon, getVehicleStatus } from '@/lib/vehicleUtils';
 import {
@@ -17,7 +17,9 @@ import {
   Building2,
   Calendar,
   Layers,
-  FileText
+  FileText,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function VehiclesCarsPage() {
@@ -34,6 +36,12 @@ export default function VehiclesCarsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Delete states
+  const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
+  const [deleteChecking, setDeleteChecking] = useState(false);
+  const [deleteDeps, setDeleteDeps] = useState<VehicleDependencies | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     license_plate: '',
     vehicle_name: '',
@@ -158,6 +166,50 @@ export default function VehiclesCarsPage() {
 
   const updateField = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  // === Delete Logic (Admin Only) ===
+  const handleDeleteClick = async (vehicle: Vehicle) => {
+    setDeleteTarget(vehicle);
+    setDeleteChecking(true);
+    setDeleteDeps(null);
+    try {
+      const deps = await checkVehicleDependencies(vehicle.id);
+      setDeleteDeps(deps);
+    } catch (error) {
+      console.error('Error checking dependencies:', error);
+      alert('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลอ้างอิง');
+      setDeleteTarget(null);
+    } finally {
+      setDeleteChecking(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const success = await deleteVehicle(deleteTarget.id);
+      if (success) {
+        setDeleteTarget(null);
+        setDeleteDeps(null);
+        loadData();
+      } else {
+        alert('ไม่สามารถลบข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteTarget(null);
+    setDeleteDeps(null);
+    setDeleteChecking(false);
+    setDeleting(false);
   };
 
   // Filter list
@@ -308,14 +360,25 @@ export default function VehiclesCarsPage() {
                     <Edit size={14} />
                     แก้ไขข้อมูล
                   </button>
-                  <button
-                    className="btn btn-danger"
-                    disabled
-                    title="ระบบลบข้อมูลปิดการใช้งานชั่วคราวใน Phase 3A"
-                    style={{ opacity: 0.5, cursor: 'not-allowed', padding: '6px 10px' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {profile?.role === 'admin' ? (
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDeleteClick(v)}
+                      title="ลบข้อมูลยานพาหนะ (เฉพาะ Admin)"
+                      style={{ padding: '6px 10px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-danger"
+                      disabled
+                      title="เฉพาะ Admin เท่านั้นที่สามารถลบข้อมูลได้"
+                      style={{ opacity: 0.5, cursor: 'not-allowed', padding: '6px 10px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -541,6 +604,115 @@ export default function VehiclesCarsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation / Blocking Dialog */}
+      {deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '480px', margin: 0 }}>
+            {deleteChecking ? (
+              /* Loading state while checking dependencies */
+              <div className="card-body" style={{ padding: '40px', textAlign: 'center' }}>
+                <Loader2 className="animate-spin" size={32} style={{ color: 'var(--primary)', margin: '0 auto 12px' }} />
+                <p style={{ fontWeight: 600, color: 'var(--text-dark)' }}>กำลังตรวจสอบข้อมูลอ้างอิง...</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '4px' }}>
+                  {deleteTarget.license_plate} — {deleteTarget.vehicle_name}
+                </p>
+              </div>
+            ) : deleteDeps && deleteDeps.total > 0 ? (
+              /* Blocked — has dependencies */
+              <>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(220, 53, 69, 0.08)' }}>
+                  <ShieldAlert size={22} style={{ color: 'var(--danger)' }} />
+                  <h3 style={{ color: 'var(--danger)', margin: 0 }}>ไม่สามารถลบได้</h3>
+                </div>
+                <div className="card-body" style={{ padding: '20px' }}>
+                  <p style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text-dark)' }}>
+                    ยานพาหนะ "{deleteTarget.license_plate}" มีข้อมูลอ้างอิงอยู่ในระบบ
+                  </p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '16px' }}>
+                    กรุณาลบข้อมูลที่อ้างอิงก่อน หรือติดต่อผู้ดูแลระบบ
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--bg-light)', borderRadius: '8px', padding: '12px' }}>
+                    {deleteDeps.trips > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>📋 บันทึกการเดินทาง (Trips)</span>
+                        <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{deleteDeps.trips} รายการ</span>
+                      </div>
+                    )}
+                    {deleteDeps.maintenance > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>🔧 บันทึกการซ่อมบำรุง (Maintenance)</span>
+                        <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{deleteDeps.maintenance} รายการ</span>
+                      </div>
+                    )}
+                    {deleteDeps.incidents > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>⚠️ รายงานอุบัติเหตุ (Incidents)</span>
+                        <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{deleteDeps.incidents} รายการ</span>
+                      </div>
+                    )}
+                    {deleteDeps.fuel > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>⛽ บันทึกการเติมน้ำมัน (Fuel)</span>
+                        <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{deleteDeps.fuel} รายการ</span>
+                      </div>
+                    )}
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '0.875rem' }}>
+                      <span>รวมข้อมูลอ้างอิงทั้งหมด</span>
+                      <span style={{ color: 'var(--danger)' }}>{deleteDeps.total} รายการ</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px' }}>
+                  <button className="btn btn-outline" onClick={handleDeleteCancel}>
+                    ปิด
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* No dependencies — confirm delete */
+              <>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 193, 7, 0.1)' }}>
+                  <AlertTriangle size={22} style={{ color: '#e67e22' }} />
+                  <h3 style={{ color: 'var(--text-dark)', margin: 0 }}>ยืนยันการลบข้อมูล</h3>
+                </div>
+                <div className="card-body" style={{ padding: '20px' }}>
+                  <p style={{ fontWeight: 600, marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    คุณต้องการลบยานพาหนะนี้หรือไม่?
+                  </p>
+                  <div style={{ background: 'var(--bg-light)', borderRadius: '8px', padding: '12px', marginTop: '12px', fontSize: '0.9rem' }}>
+                    <div><strong>ทะเบียน:</strong> {deleteTarget.license_plate}</div>
+                    <div><strong>ชื่อรถ:</strong> {deleteTarget.vehicle_name}</div>
+                    <div><strong>ประเภท:</strong> {getVehicleTypeName(deleteTarget.vehicle_type)}</div>
+                    {deleteTarget.brand && <div><strong>ยี่ห้อ/รุ่น:</strong> {deleteTarget.brand} {deleteTarget.model || ''}</div>}
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--danger)', marginTop: '12px', fontWeight: 600 }}>
+                    ⚠️ การลบนี้ไม่สามารถย้อนกลับได้ (ข้อมูลจะถูกลบถาวร)
+                  </p>
+                </div>
+                <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '12px 16px' }}>
+                  <button className="btn btn-outline" onClick={handleDeleteCancel} disabled={deleting}>
+                    ยกเลิก
+                  </button>
+                  <button className="btn btn-danger" onClick={handleDeleteConfirm} disabled={deleting}>
+                    {deleting ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        กำลังลบ...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        ยืนยันลบ
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
