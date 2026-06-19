@@ -119,6 +119,7 @@ export default function ReportsPage() {
         'สถานที่จัดเก็บ': asset.location || '-',
         'วิธีได้มา': asset.acquisition_method || '-',
         'วันที่ได้มา': asset.acquisition_date || '-',
+        'ปีงบประมาณ': asset.acquisition_year || '-',
         'จำนวน': asset.quantity,
         'หน่วยนับ': asset.unit,
         'ราคาต่อหน่วย': Number(asset.unit_price),
@@ -299,6 +300,10 @@ export default function ReportsPage() {
                   <tr>
                     <td className="info-label">วันที่ได้มา</td>
                     <td className="info-val">{activeAsset.acquisition_date || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">ปีงบประมาณที่ได้มา</td>
+                    <td className="info-val">{activeAsset.acquisition_year || '-'}</td>
                   </tr>
                   <tr>
                     <td className="info-label">จำนวนครุภัณฑ์</td>

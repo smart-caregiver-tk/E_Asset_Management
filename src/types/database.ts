@@ -106,6 +106,7 @@ export interface Asset {
   special_feature: string | null;
   acquisition_date: string | null;
   acquisition_method: string | null;
+  acquisition_year: string | null;
   category_id: string | null;
   location: string | null;
   quantity: number;

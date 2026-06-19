@@ -395,6 +395,10 @@ export default function SearchPage() {
                         <td className="info-val">{activeAsset.acquisition_date || '-'}</td>
                       </tr>
                       <tr>
+                        <td className="info-label">ปีงบประมาณที่ได้มา</td>
+                        <td className="info-val">{activeAsset.acquisition_year || '-'}</td>
+                      </tr>
+                      <tr>
                         <td className="info-label">จำนวนสิ่งของ</td>
                         <td className="info-val">{formatNumber(activeAsset.quantity)} {activeAsset.unit}</td>
                       </tr>

@@ -38,7 +38,7 @@ export default function Topbar({ onToggleMobile }: TopbarProps) {
       case 'reports':
         return 'รายงาน / พ.ด. ๒';
       default:
-        return 'ระบบบริหารครุภัณฑ์';
+        return 'ระบบบริหารครุภัณฑ์และยานพาหนะ';
     }
   };
 

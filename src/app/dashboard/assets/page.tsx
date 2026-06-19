@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import type { Asset, Category } from '@/types/database';
 
+const currentYearBE = new Date().getFullYear() + 543;
+const yearsList = Array.from({ length: 25 }, (_, i) => currentYearBE + 2 - i);
+
 export default function AssetsPage() {
   const { profile, selectedDeptId, departments } = useAuth();
   const { showToast } = useToast();
@@ -62,8 +65,9 @@ export default function AssetsPage() {
   const [unit, setUnit] = useState('หน่วย');
   const [unitPrice, setUnitPrice] = useState<number>(0);
   const [totalValue, setTotalValue] = useState<number>(0);
-  const [acquisitionMethod, setAcquisitionMethod] = useState('งบประมาณท้องถิ่น');
+  const [acquisitionMethod, setAcquisitionMethod] = useState('งบประมาณรายจ่ายประจำปี');
   const [acquisitionDate, setAcquisitionDate] = useState('');
+  const [acquisitionYear, setAcquisitionYear] = useState('');
 
   // Warranty
   const [warrantyMonths, setWarrantyMonths] = useState<number>(0);
@@ -155,8 +159,9 @@ export default function AssetsPage() {
     setUnit('เครื่อง');
     setUnitPrice(0);
     setTotalValue(0);
-    setAcquisitionMethod('งบประมาณท้องถิ่น');
+    setAcquisitionMethod('งบประมาณรายจ่ายประจำปี');
     setAcquisitionDate('');
+    setAcquisitionYear('');
     setWarrantyMonths(0);
     setWarrantyEndDate('');
     setWarrantyCompany('');
@@ -196,8 +201,9 @@ export default function AssetsPage() {
     setUnit(asset.unit || 'เครื่อง');
     setUnitPrice(asset.unit_price ? Number(asset.unit_price) : 0);
     setTotalValue(asset.total_value ? Number(asset.total_value) : 0);
-    setAcquisitionMethod(asset.acquisition_method || 'งบประมาณท้องถิ่น');
+    setAcquisitionMethod(asset.acquisition_method || 'งบประมาณรายจ่ายประจำปี');
     setAcquisitionDate(asset.acquisition_date || '');
+    setAcquisitionYear(asset.acquisition_year || '');
     setWarrantyMonths(asset.warranty_months || 0);
     setWarrantyEndDate(asset.warranty_end_date || '');
     setWarrantyCompany(asset.warranty_company || '');
@@ -249,6 +255,7 @@ export default function AssetsPage() {
       special_feature: specialFeature,
       acquisition_method: acquisitionMethod,
       acquisition_date: acquisitionDate,
+      acquisition_year: acquisitionYear,
       category_id: categoryId || null,
       location,
       quantity,
@@ -842,9 +849,11 @@ export default function AssetsPage() {
                       value={acquisitionMethod || ''}
                       onChange={(e) => setAcquisitionMethod(e.target.value)}
                     >
-                      <option value="งบประมาณท้องถิ่น">งบประมาณท้องถิ่น (ซื้อ/จ่าย)</option>
-                      <option value="เงินบริจาค">เงินบริจาค/อุปถัมภ์</option>
-                      <option value="โอนย้าย">การโอนจากส่วนราชการอื่น</option>
+                      <option value="งบประมาณรายจ่ายประจำปี">งบประมาณรายจ่ายประจำปี</option>
+                      <option value="เงินอุดหนุนเฉพาะกิจ">เงินอุดหนุนเฉพาะกิจ</option>
+                      <option value="เงินจัดสรรผลประโยชน์พิเศษแก่รัฐ (กพร.)">เงินจัดสรรผลประโยชน์พิเศษแก่รัฐ (กพร.)</option>
+                      <option value="เงินสะสม/เงินทุนสำรอง">เงินสะสม/เงินทุนสำรอง</option>
+                      <option value="การรับบริจาคและการโอน">การรับบริจาคและการโอน</option>
                     </select>
                   </div>
                   <div className="form-group">
@@ -856,6 +865,27 @@ export default function AssetsPage() {
                       value={acquisitionDate || ''}
                       onChange={(e) => setAcquisitionDate(e.target.value)}
                     />
+                  </div>
+                </div>
+
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label className="form-label">ปีงบประมาณที่ได้มา</label>
+                    <select
+                      className="form-input"
+                      value={acquisitionYear || ''}
+                      onChange={(e) => setAcquisitionYear(e.target.value)}
+                    >
+                      <option value="">-- เลือกปีงบประมาณ --</option>
+                      {yearsList.map((y) => (
+                        <option key={y} value={`ปีงบประมาณ พ.ศ.${y}`}>
+                          ปีงบประมาณ พ.ศ.{y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    {/* Spacer column */}
                   </div>
                 </div>
 

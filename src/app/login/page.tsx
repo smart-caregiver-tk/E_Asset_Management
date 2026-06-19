@@ -61,7 +61,7 @@ export default function LoginPage() {
             priority
           />
         </div>
-        <h1 className="login-title">ระบบบริหารครุภัณฑ์</h1>
+        <h1 className="login-title">ระบบบริหารครุภัณฑ์และยานพาหนะ</h1>
         <p className="login-subtitle">เทศบาลเมืองทับกวาง จ.สระบุรี</p>
 
         {errorMsg && <div className="login-error">{errorMsg}</div>}
