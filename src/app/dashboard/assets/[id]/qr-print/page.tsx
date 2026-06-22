@@ -6,7 +6,8 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { Loader2, Printer, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function QRPrintPage({ params }: { params: { id: string } }) {
+export default function QRPrintPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = React.use(params);
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,7 +19,7 @@ export default function QRPrintPage({ params }: { params: { id: string } }) {
         const { data, error } = await supabase
           .from('assets')
           .select('*, departments(name), categories(name)')
-          .eq('id', params.id)
+          .eq('id', resolvedParams.id)
           .single();
 
         if (error) throw error;
@@ -29,8 +30,14 @@ export default function QRPrintPage({ params }: { params: { id: string } }) {
         setLoading(false);
       }
     }
-    loadAsset();
-  }, [params.id]);
+    
+    if (resolvedParams.id) {
+      loadAsset();
+    } else {
+      setLoading(false);
+      setError('ไม่พบรหัสอ้างอิงครุภัณฑ์');
+    }
+  }, [resolvedParams.id]);
 
   if (loading) {
     return (

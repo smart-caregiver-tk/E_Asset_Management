@@ -17,12 +17,13 @@ import {
 import Image from 'next/image';
 
 interface AssetPassportProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
 export default function AssetPassportPage({ params }: AssetPassportProps) {
+  const resolvedParams = React.use(params);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,26 +32,34 @@ export default function AssetPassportPage({ params }: AssetPassportProps) {
     async function loadPassport() {
       try {
         const { data: assetData, error: rpcError } = await supabase.rpc('get_public_asset_passport', {
-          p_token: params.token
+          p_token: resolvedParams.token
         });
 
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error('RPC Error:', rpcError);
+          throw rpcError;
+        }
+        
         if (!assetData) {
           setError('ไม่พบข้อมูลครุภัณฑ์ หรือ QR Code นี้ถูกระงับการใช้งาน');
         } else {
           setData(assetData);
         }
       } catch (err: any) {
+        console.error('Error loading passport:', err);
         setError('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
       } finally {
         setLoading(false);
       }
     }
 
-    if (params.token) {
+    if (resolvedParams.token) {
       loadPassport();
+    } else {
+      setLoading(false);
+      setError('ไม่พบรหัส Token หรือรูปแบบไม่ถูกต้อง');
     }
-  }, [params.token]);
+  }, [resolvedParams.token]);
 
   if (loading) {
     return (
