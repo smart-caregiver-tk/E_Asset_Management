@@ -94,27 +94,46 @@ export default function DashboardPage() {
         setStats({ totalCount, totalValue, brokenCount, lendCount });
 
         // 2. Category breakdown stats
-        const catMap = new Map<string, { count: number; value: number }>();
+        // Group assets by category_id first
+        const catIdMap = new Map<string, { count: number; value: number }>();
         allAssets.forEach((item) => {
           if (item.category_id) {
-            const current = catMap.get(item.category_id) || { count: 0, value: 0 };
-            catMap.set(item.category_id, {
+            const current = catIdMap.get(item.category_id) || { count: 0, value: 0 };
+            catIdMap.set(item.category_id, {
               count: current.count + (item.quantity || 0),
               value: current.value + (Number(item.total_value) || 0),
             });
           }
         });
 
-        const catStatsList: CategoryStat[] = allCategories.map((cat) => {
-          const s = catMap.get(cat.id) || { count: 0, value: 0 };
-          return {
-            id: cat.id,
-            name: cat.name,
-            code: cat.code,
-            count: s.count,
-            value: s.value,
-          };
-        }).sort((a, b) => b.value - a.value);
+        // Group by category CODE (not id) to avoid duplicate rows when
+        // the same code exists once per department (Admin all-dept view)
+        const codeGroupMap = new Map<string, { name: string; code: string; count: number; value: number }>();
+        allCategories.forEach((cat) => {
+          const assetStat = catIdMap.get(cat.id) || { count: 0, value: 0 };
+          const existing = codeGroupMap.get(cat.code);
+          if (existing) {
+            existing.count += assetStat.count;
+            existing.value += assetStat.value;
+          } else {
+            codeGroupMap.set(cat.code, {
+              name: cat.name,
+              code: cat.code,
+              count: assetStat.count,
+              value: assetStat.value,
+            });
+          }
+        });
+
+        const catStatsList: CategoryStat[] = Array.from(codeGroupMap.values())
+          .map((g) => ({
+            id: g.code, // use code as unique key for display
+            name: g.name,
+            code: g.code,
+            count: g.count,
+            value: g.value,
+          }))
+          .sort((a, b) => b.value - a.value);
 
         setCategoryStats(catStatsList);
 
