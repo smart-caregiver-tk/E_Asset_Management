@@ -24,6 +24,9 @@ import {
   Image as ImageIcon,
   ChevronDown,
   QrCode,
+  CheckSquare,
+  XSquare,
+  RefreshCw,
 } from 'lucide-react';
 import type { Asset, Category } from '@/types/database';
 import QRPassportPanel from '@/components/QRPassportPanel';
@@ -100,6 +103,10 @@ export default function AssetsPage() {
   // Delete Confirm State
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+
+  // Bulk Selection State
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // Auto calculate total value when quantity or unit price changes
   useEffect(() => {
@@ -346,6 +353,44 @@ export default function AssetsPage() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
+  const toggleSelectAll = () => {
+    if (filteredAssets.length === 0) return;
+    if (selectedAssets.length === filteredAssets.length) {
+      setSelectedAssets([]);
+    } else {
+      setSelectedAssets(filteredAssets.map(a => a.id));
+    }
+  };
+
+  const toggleSelectAsset = (id: string) => {
+    setSelectedAssets(prev => 
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkQRAction = async (action: 'enable' | 'disable' | 'regenerate') => {
+    if (selectedAssets.length === 0) return;
+    
+    const actionText = action === 'enable' ? 'เปิดใช้งาน' : action === 'disable' ? 'ปิดการใช้งาน' : 'สร้างรหัสใหม่';
+    if (!confirm(`คุณแน่ใจหรือไม่ที่จะ ${actionText} QR Passport สำหรับ ${selectedAssets.length} รายการที่เลือก?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.rpc('admin_bulk_manage_qr_passport', {
+        p_asset_ids: selectedAssets,
+        p_action: action
+      });
+      if (error) throw error;
+      showToast(`ดำเนินการสำเร็จสำหรับ ${selectedAssets.length} รายการ`, 'success');
+      fetchAssetsAndCategories();
+      setSelectedAssets([]);
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาดในการทำรายการ: ' + err.message, 'error');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -423,6 +468,29 @@ export default function AssetsPage() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {profile?.role === 'admin' && selectedAssets.length > 0 && (
+        <div className="card" style={{ marginBottom: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <div className="card-body" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckSquare size={18} color="#166534" />
+              <span style={{ fontWeight: 600, color: '#166534' }}>เลือกแล้ว {selectedAssets.length} รายการ</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" style={{ borderColor: '#16a34a', color: '#16a34a', background: 'white' }} onClick={() => handleBulkQRAction('enable')} disabled={bulkActionLoading}>
+                <QrCode size={16} /> เปิดใช้งาน QR
+              </button>
+              <button className="btn btn-outline" style={{ borderColor: '#dc2626', color: '#dc2626', background: 'white' }} onClick={() => handleBulkQRAction('disable')} disabled={bulkActionLoading}>
+                <XSquare size={16} /> ปิดการใช้งาน QR
+              </button>
+              <button className="btn btn-primary" onClick={() => handleBulkQRAction('regenerate')} disabled={bulkActionLoading}>
+                <RefreshCw size={16} /> สร้างรหัส QR ใหม่
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Card */}
       <div className="card">
         <div className="card-body" style={{ padding: 0 }}>
@@ -441,6 +509,16 @@ export default function AssetsPage() {
               <table>
                 <thead>
                   <tr>
+                    {profile?.role === 'admin' && (
+                      <th style={{ width: '40px', textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={filteredAssets.length > 0 && selectedAssets.length === filteredAssets.length}
+                          onChange={toggleSelectAll}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                      </th>
+                    )}
                     <th>รหัสครุภัณฑ์</th>
                     <th>ชื่อครุภัณฑ์</th>
                     <th>หมวดหมู่</th>
@@ -459,7 +537,17 @@ export default function AssetsPage() {
                     const deptShortName = departments.find((d) => d.id === asset.department_id)?.short_name || '-';
 
                     return (
-                      <tr key={asset.id}>
+                      <tr key={asset.id} className={selectedAssets.includes(asset.id) ? 'selected-row' : ''} style={{ background: selectedAssets.includes(asset.id) ? '#f0fdf4' : '' }}>
+                        {profile?.role === 'admin' && (
+                          <td className="text-center">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedAssets.includes(asset.id)}
+                              onChange={() => toggleSelectAsset(asset.id)}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                          </td>
+                        )}
                         <td style={{ fontWeight: 600, color: 'var(--text-dark)' }}>{asset.code}</td>
                         <td style={{ fontWeight: 500 }}>{asset.name}</td>
                         <td style={{ color: 'var(--text-mid)' }}>{catName}</td>
