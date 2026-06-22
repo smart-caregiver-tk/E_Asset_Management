@@ -131,6 +131,10 @@ export interface Asset {
   photo_urls: string[] | null;
   remark: string | null;
   department_id: string;
+  qr_public_enabled: boolean;
+  qr_public_token: string | null;
+  qr_code_created_at: string | null;
+  qr_code_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -23,8 +23,10 @@ import {
   DollarSign,
   Image as ImageIcon,
   ChevronDown,
+  QrCode,
 } from 'lucide-react';
 import type { Asset, Category } from '@/types/database';
+import QRPassportPanel from '@/components/QRPassportPanel';
 
 const currentYearBE = new Date().getFullYear() + 543;
 const yearsList = Array.from({ length: 25 }, (_, i) => currentYearBE + 2 - i);
@@ -44,7 +46,7 @@ export default function AssetsPage() {
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'detail' | 'finance' | 'photo'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'detail' | 'finance' | 'photo' | 'qr'>('basic');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -562,6 +564,16 @@ export default function AssetsPage() {
               <ImageIcon size={14} />
               รูปถ่ายครุภัณฑ์
             </button>
+            {profile?.role === 'admin' && editingAsset && (
+              <button
+                type="button"
+                className={`modal-tab ${activeTab === 'qr' ? 'active' : ''}`}
+                onClick={() => setActiveTab('qr')}
+              >
+                <QrCode size={14} />
+                QR Passport
+              </button>
+            )}
           </div>
 
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -1010,6 +1022,22 @@ export default function AssetsPage() {
                 </p>
                 <PhotoUploader photoUrls={photoUrls} onChange={setPhotoUrls} />
               </div>
+
+              {/* TAB 5: QR PASSPORT */}
+              {profile?.role === 'admin' && editingAsset && (
+                <div className={`tab-content ${activeTab === 'qr' ? 'active' : ''}`}>
+                  <QRPassportPanel 
+                    asset={editingAsset} 
+                    onRefresh={async () => {
+                      const { data } = await supabase.from('assets').select('*').eq('id', editingAsset.id).single();
+                      if (data) {
+                        setEditingAsset(data);
+                        fetchAssetsAndCategories();
+                      }
+                    }} 
+                  />
+                </div>
+              )}
 
             </div>
             <div className="modal-footer">
