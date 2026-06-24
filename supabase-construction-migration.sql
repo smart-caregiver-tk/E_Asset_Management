@@ -99,6 +99,10 @@ CREATE POLICY "Department updates own constructions" ON constructions FOR UPDATE
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR public.is_admin()
 );
+CREATE POLICY "Department deletes own constructions" ON constructions FOR DELETE USING (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
 CREATE POLICY "Admin can manage all constructions" ON constructions FOR ALL USING (
   public.is_admin()
 );
@@ -120,6 +124,10 @@ CREATE POLICY "Users can insert own dept construction_depreciation" ON construct
   OR public.is_admin()
 );
 CREATE POLICY "Users can update own dept construction_depreciation" ON construction_depreciation FOR UPDATE USING (
+  construction_id IN (SELECT id FROM constructions WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
+CREATE POLICY "Users can delete own dept construction_depreciation" ON construction_depreciation FOR DELETE USING (
   construction_id IN (SELECT id FROM constructions WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
   OR public.is_admin()
 );
