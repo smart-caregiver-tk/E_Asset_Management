@@ -63,6 +63,16 @@ export interface Database {
         Insert: Omit<FuelLog, 'id' | 'created_at'>;
         Update: Partial<Omit<FuelLog, 'id' | 'created_at'>>;
       };
+      constructions: {
+        Row: Construction;
+        Insert: Omit<Construction, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Construction, 'id' | 'created_at'>>;
+      };
+      construction_depreciation: {
+        Row: ConstructionDepreciation;
+        Insert: Omit<ConstructionDepreciation, 'id' | 'created_at'>;
+        Update: Partial<Omit<ConstructionDepreciation, 'id' | 'created_at'>>;
+      };
     };
   };
 }
@@ -170,4 +180,54 @@ export interface AssetWithCategory extends Asset {
 
 export interface ProfileWithDepartment extends Profile {
   departments?: Department;
+}
+
+// ============================================================
+// Construction Registry (แบบ พ.ด.1)
+// ============================================================
+export interface Construction {
+  id: string;
+  registry_code: string;
+  construction_type: string;
+  name: string;
+  description: string | null;
+  location: string | null;
+  procurement_method: string | null;
+  acquisition_date: string | null;
+  contract_no: string | null;
+  price: number;
+  fiscal_year: string | null;
+  width_m: number;
+  length_m: number;
+  thickness_m: number;
+  lanes: number;
+  shoulder_width_m: number;
+  area_sqm: number;
+  land_type: string | null;
+  land_rai: number;
+  land_ngan: number;
+  land_sqwa: number;
+  has_building: boolean;
+  building_completed: boolean;
+  building_no: string | null;
+  building_cost: number;
+  useful_life_years: number;
+  responsible_officer: string | null;
+  status: string;
+  photo_urls: string[] | null;
+  remark: string | null;
+  department_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConstructionDepreciation {
+  id: string;
+  construction_id: string;
+  fiscal_year: string;
+  description: string | null;
+  cost_or_value: number;
+  accumulated: string | null;
+  remark: string | null;
+  created_at: string;
 }

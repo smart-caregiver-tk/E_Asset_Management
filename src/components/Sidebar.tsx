@@ -46,6 +46,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { name: 'บันทึกซ่อมบำรุง', path: '/dashboard/repairs', icon: Wrench },
     { name: 'ค้นหาครุภัณฑ์', path: '/dashboard/search', icon: Search },
     { name: 'รายงาน', path: '/dashboard/reports', icon: FileSpreadsheet },
+    { name: 'ทะเบียนสิ่งก่อสร้าง (พ.ด.1)', path: '/dashboard/constructions', icon: FolderTree },
   ];
 
   return (
