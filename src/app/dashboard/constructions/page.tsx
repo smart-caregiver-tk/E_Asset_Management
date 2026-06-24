@@ -235,7 +235,11 @@ export default function ConstructionsPage() {
           >
             <option value="">-- ทุกประเภท --</option>
             <option value="ที่ดิน">ที่ดิน</option>
-            <option value="สิ่งก่อสร้าง">สิ่งก่อสร้าง (ถนน/อาคาร/ฯลฯ)</option>
+            <option value="ถนน">ถนน</option>
+            <option value="อาคาร">อาคาร</option>
+            <option value="สะพาน">สะพาน</option>
+            <option value="ท่อระบายน้ำ">ท่อระบายน้ำ</option>
+            <option value="สิ่งก่อสร้างอื่นๆ">สิ่งก่อสร้างอื่นๆ</option>
           </select>
         </div>
 
@@ -337,8 +341,12 @@ export default function ConstructionsPage() {
                     <div className="form-group">
                       <label className="form-label required">ประเภท</label>
                       <select className="form-input" value={form.construction_type} onChange={e => updateField('construction_type', e.target.value)} required>
-                        <option value="สิ่งก่อสร้าง">สิ่งก่อสร้าง (เช่น ถนน, อาคาร)</option>
                         <option value="ที่ดิน">ที่ดิน</option>
+                        <option value="ถนน">ถนน</option>
+                        <option value="อาคาร">อาคาร</option>
+                        <option value="สะพาน">สะพาน</option>
+                        <option value="ท่อระบายน้ำ">ท่อระบายน้ำ</option>
+                        <option value="สิ่งก่อสร้างอื่นๆ">สิ่งก่อสร้างอื่นๆ</option>
                       </select>
                     </div>
                   </div>
