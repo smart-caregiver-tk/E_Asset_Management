@@ -419,7 +419,7 @@ export default function ConstructionsPage() {
                 <tbody>
                   {filteredData.map((item) => (
                     <tr key={item.id}>
-                      <td style={{ fontWeight: 600 }}>{item.registry_code}</td>
+                      <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{item.registry_code}</td>
                       <td>{item.name}</td>
                       <td>{item.construction_type}</td>
                       <td>฿{item.price?.toLocaleString()}</td>

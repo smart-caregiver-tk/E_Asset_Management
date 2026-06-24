@@ -548,7 +548,7 @@ export default function AssetsPage() {
                             />
                           </td>
                         )}
-                        <td style={{ fontWeight: 600, color: 'var(--text-dark)' }}>{asset.code}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>{asset.code}</td>
                         <td style={{ fontWeight: 500 }}>{asset.name}</td>
                         <td style={{ color: 'var(--text-mid)' }}>{catName}</td>
                         <td className="text-center">{formatNumber(asset.quantity)} {asset.unit}</td>
