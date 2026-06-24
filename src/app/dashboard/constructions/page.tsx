@@ -469,7 +469,7 @@ export default function ConstructionsPage() {
             <button type="button" className={`modal-tab ${activeTab === 'basic' ? 'active' : ''}`} onClick={() => setActiveTab('basic')}>ข้อมูลหลัก</button>
             <button type="button" className={`modal-tab ${activeTab === 'dimension' ? 'active' : ''}`} onClick={() => setActiveTab('dimension')}>ขนาดและมิติ</button>
             <button type="button" className={`modal-tab ${activeTab === 'land' ? 'active' : ''}`} onClick={() => setActiveTab('land')}>ข้อมูลที่ดินและอาคาร</button>
-            <button type="button" className={`modal-tab ${activeTab === 'repairs' ? 'active' : ''}`} onClick={() => setActiveTab('repairs')} disabled={!editingConstruction}>บันทึกการซ่อม/ปรับปรุง</button>
+            <button type="button" className={`modal-tab ${activeTab === 'repairs' ? 'active' : ''}`} onClick={() => setActiveTab('repairs')}>บันทึกการซ่อม/ปรับปรุง</button>
           </div>
 
           <form onSubmit={handleSave}>
@@ -678,6 +678,13 @@ export default function ConstructionsPage() {
                       <input type="number" className="form-input" value={form.building_cost} onChange={e => updateField('building_cost', parseFloat(e.target.value) || 0)} />
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'repairs' && !editingConstruction && (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
+                  <FolderTree size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                  <p>กรุณาบันทึกข้อมูลหลักของสิ่งก่อสร้างให้เสร็จสิ้นก่อน<br/>จึงจะสามารถเพิ่มประวัติการซ่อมบำรุงได้</p>
                 </div>
               )}
 
