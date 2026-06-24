@@ -201,12 +201,20 @@ CREATE POLICY "Department deletes own assets" ON assets FOR DELETE USING (
 -- repairs: department เห็นของตัวเอง, admin เห็นทั้งหมด
 DROP POLICY IF EXISTS "Department reads own repairs" ON repairs;
 DROP POLICY IF EXISTS "Department inserts own repairs" ON repairs;
+DROP POLICY IF EXISTS "Department updates own repairs" ON repairs;
 DROP POLICY IF EXISTS "Department deletes own repairs" ON repairs;
 CREATE POLICY "Department reads own repairs" ON repairs FOR SELECT USING (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR public.is_admin()
 );
 CREATE POLICY "Department inserts own repairs" ON repairs FOR INSERT WITH CHECK (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own repairs" ON repairs FOR UPDATE USING (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+) WITH CHECK (
   department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
   OR public.is_admin()
 );

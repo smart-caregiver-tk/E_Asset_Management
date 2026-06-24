@@ -175,12 +175,34 @@ DROP POLICY IF EXISTS "Anyone logged in can read vehicle_cars" ON vehicle_cars;
 DROP POLICY IF EXISTS "Admin can manage vehicle_cars" ON vehicle_cars;
 CREATE POLICY "Anyone logged in can read vehicle_cars" ON vehicle_cars FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin can manage vehicle_cars" ON vehicle_cars FOR ALL USING (public.is_admin());
+CREATE POLICY "Department inserts own vehicle_cars" ON vehicle_cars FOR INSERT WITH CHECK (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own vehicle_cars" ON vehicle_cars FOR UPDATE USING (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+) WITH CHECK (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
 
 -- 7.2 Policies: vehicle_drivers (ดูได้ทุกคนที่ล็อกอิน, เขียน/แก้ไขโดย Admin เท่านั้น)
 DROP POLICY IF EXISTS "Anyone logged in can read vehicle_drivers" ON vehicle_drivers;
 DROP POLICY IF EXISTS "Admin can manage vehicle_drivers" ON vehicle_drivers;
 CREATE POLICY "Anyone logged in can read vehicle_drivers" ON vehicle_drivers FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin can manage vehicle_drivers" ON vehicle_drivers FOR ALL USING (public.is_admin());
+CREATE POLICY "Department inserts own vehicle_drivers" ON vehicle_drivers FOR INSERT WITH CHECK (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own vehicle_drivers" ON vehicle_drivers FOR UPDATE USING (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+) WITH CHECK (
+  department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid())
+  OR public.is_admin()
+);
 
 -- 7.3 Policies: vehicle_trips (ดูของกองงานตัวเอง หรือเป็น Admin จึงจะจัดการได้ทั้งหมด)
 DROP POLICY IF EXISTS "Users can read own department vehicle_trips" ON vehicle_trips;
@@ -210,6 +232,17 @@ CREATE POLICY "Users can read own department maintenance_logs" ON vehicle_mainte
   OR public.is_admin()
 );
 CREATE POLICY "Admin can manage all maintenance_logs" ON vehicle_maintenance_logs FOR ALL USING (public.is_admin());
+CREATE POLICY "Department inserts own maintenance_logs" ON vehicle_maintenance_logs FOR INSERT WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own maintenance_logs" ON vehicle_maintenance_logs FOR UPDATE USING (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+) WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
 
 -- 7.5 Policies: vehicle_incident_reports (ดูได้ตามส่วนราชการของรถยนต์ หรือเป็น Admin)
 DROP POLICY IF EXISTS "Users can read own department incident_reports" ON vehicle_incident_reports;
@@ -219,6 +252,17 @@ CREATE POLICY "Users can read own department incident_reports" ON vehicle_incide
   OR public.is_admin()
 );
 CREATE POLICY "Admin can manage all incident_reports" ON vehicle_incident_reports FOR ALL USING (public.is_admin());
+CREATE POLICY "Department inserts own incident_reports" ON vehicle_incident_reports FOR INSERT WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own incident_reports" ON vehicle_incident_reports FOR UPDATE USING (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+) WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
 
 -- 7.6 Policies: vehicle_fuel_logs (ดูได้ตามส่วนราชการของรถยนต์ หรือเป็น Admin)
 DROP POLICY IF EXISTS "Users can read own department fuel_logs" ON vehicle_fuel_logs;
@@ -228,6 +272,17 @@ CREATE POLICY "Users can read own department fuel_logs" ON vehicle_fuel_logs FOR
   OR public.is_admin()
 );
 CREATE POLICY "Admin can manage all fuel_logs" ON vehicle_fuel_logs FOR ALL USING (public.is_admin());
+CREATE POLICY "Department inserts own fuel_logs" ON vehicle_fuel_logs FOR INSERT WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
+CREATE POLICY "Department updates own fuel_logs" ON vehicle_fuel_logs FOR UPDATE USING (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+) WITH CHECK (
+  vehicle_id IN (SELECT id FROM vehicle_cars WHERE department_id IN (SELECT department_id FROM profiles WHERE id = auth.uid()))
+  OR public.is_admin()
+);
 
 -- ============================================================
 -- 8. INDEXES

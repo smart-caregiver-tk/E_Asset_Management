@@ -44,7 +44,7 @@ export async function addVehicle(vehicle: Omit<Vehicle, 'id' | 'created_at' | 'u
     .single();
   if (error) {
     console.error('addVehicle error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -63,7 +63,7 @@ export async function updateVehicle(id: string, updates: Partial<Vehicle>): Prom
     .single();
   if (error) {
     console.error('updateVehicle error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -133,7 +133,7 @@ export async function addDriver(driver: Omit<Driver, 'id' | 'created_at'>): Prom
     .single();
   if (error) {
     console.error('addDriver error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -150,7 +150,7 @@ export async function updateDriver(id: string, updates: Partial<Driver>): Promis
     .single();
   if (error) {
     console.error('updateDriver error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -242,7 +242,7 @@ export async function addTripLog(trip: Omit<TripLog, 'id' | 'trip_no' | 'created
     .single();
   if (error) {
     console.error('addTripLog error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -265,7 +265,7 @@ export async function updateTripLog(id: string, updates: Partial<TripLog>): Prom
     .single();
   if (error) {
     console.error('updateTripLog error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -337,7 +337,7 @@ export async function addMaintenanceLog(log: Omit<MaintenanceLog, 'id' | 'create
     .single();
   if (error) {
     console.error('addMaintenanceLog error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -354,7 +354,7 @@ export async function updateMaintenanceLog(id: string, updates: Partial<Maintena
     .single();
   if (error) {
     console.error('updateMaintenanceLog error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -401,7 +401,7 @@ export async function addIncidentReport(report: Omit<IncidentReport, 'id' | 'cre
     .single();
   if (error) {
     console.error('addIncidentReport error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
@@ -441,7 +441,7 @@ export async function addFuelLog(log: Omit<FuelLog, 'id' | 'created_at'>): Promi
     .single();
   if (error) {
     console.error('addFuelLog error:', error);
-    return null;
+    throw error;
   }
   return data;
 }
