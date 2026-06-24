@@ -23,10 +23,51 @@ export default function ConstructionsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'dimension' | 'land' | 'depreciation'>('basic');
 
+  // New Custom States
+  const [selectedMoo, setSelectedMoo] = useState('');
+  const [selectedCommunity, setSelectedCommunity] = useState('');
+  const [acqDay, setAcqDay] = useState('');
+  const [acqMonth, setAcqMonth] = useState('');
+  const [acqYear, setAcqYear] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+
+  const MOO_OPTIONS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+  const COMMUNITY_MAP: Record<string, string[]> = {
+    '1': ['ชุมชนบ้านซับมัน', 'ชุมชนบ้านใหม่ (ผาเสด็จ)', 'ชุมชนบ้านป่าแดง', 'ชุมชนบ้านริมภู'],
+    '2': ['ชุมชนบ้านทุ่งเศรษฐี', 'ชุมชนเพชรไผ่ทอง ๑', 'ชุมชนเพชรไผ่ทอง ๒'],
+    '3': ['ชุมชนบ้านไทย', 'ชุมชนหน้าวัดซับป่า', 'ชุมชนหนองปลาดุก'],
+    '4': ['ชุมชนหัววังยาว', 'ชุมชนบ้านเหนือวัดทับกวาง', 'ชุมชนบ้านใหม่', 'ชุมชนบ้านสะพานสาม'],
+    '5': ['ชุมชนแผ่นดินทอง', 'ชุมชนบ้านซับบอนพัฒนา'],
+    '6': ['ชุมชนหัวเขาพัฒนา', 'ชุมชนเขากระแต', 'ชุมชนบ้านโป่งพัฒนา'],
+    '7': ['ชุมชนหนองบัวบาน', 'ชุมชนมิตรภาพร่วมใจ', 'ชุมชนดินสอพอง', 'ชุมชนบ้านโคกพัฒนา', 'ชุมชนหนองผักบุ้ง', 'ชุมชนหินดาดพัฒนา', 'ชุมชนบ้านสะพานสอง'],
+    '8': ['ชุมชนคุ้มไผ่ทอง', 'ชุมชนบ้านป่าไผ่เหนือ'],
+    '9': ['ชุมชนเฟื่องฟ้า', 'ชุมชนนิคมพัฒนา', 'ชุมชนบ้านเจริญพร', 'ชุมชนบ้านจัดสรร', 'ชุมชนทับกวาง'],
+    '10': ['ชุมชนเกษตรสัมพันธ์', 'ชุมชนบ้านถ้ำพัฒนา', 'ชุมชนบ้านน้ำพุ']
+  };
+
+  const handleRegistryCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 3) val = val.slice(0, 3) + '-' + val.slice(3);
+    if (val.length > 6) val = val.slice(0, 6) + '-' + val.slice(6);
+    if (val.length > 10) val = val.slice(0, 10);
+    updateField('registry_code', val);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Form Fields
   const [form, setForm] = useState<Partial<Construction>>({
     registry_code: '',
-    construction_type: 'สิ่งก่อสร้าง',
+    construction_type: 'คมนาคม',
     name: '',
     description: '',
     location: '',
@@ -54,6 +95,7 @@ export default function ConstructionsPage() {
     status: 'ใช้งาน',
     remark: '',
     department_id: '',
+    photo_urls: [],
   });
 
   // Delete Confirm State
@@ -87,7 +129,7 @@ export default function ConstructionsPage() {
     setEditingConstruction(null);
     setForm({
       registry_code: '',
-      construction_type: 'สิ่งก่อสร้าง',
+      construction_type: 'คมนาคม',
       name: '',
       description: '',
       location: '',
@@ -115,14 +157,58 @@ export default function ConstructionsPage() {
       status: 'ใช้งาน',
       remark: '',
       department_id: profile?.role === 'admin' ? '' : (profile?.department_id || ''),
+      photo_urls: [],
     });
+    setSelectedMoo('');
+    setSelectedCommunity('');
+    setAcqDay('');
+    setAcqMonth('');
+    setAcqYear('');
+    setPreviewUrl('');
     setActiveTab('basic');
     setModalOpen(true);
   };
 
   const openEditModal = (item: Construction) => {
     setEditingConstruction(item);
-    setForm({ ...item });
+    setForm({ ...item, construction_type: 'คมนาคม' });
+    
+    // Parse Location
+    let initialMoo = '';
+    let initialCommunity = '';
+    if (item.location) {
+      const mooMatch = item.location.match(/หมู่ที่ (\d+)/);
+      if (mooMatch) initialMoo = mooMatch[1];
+      for (const commList of Object.values(COMMUNITY_MAP)) {
+        for (const comm of commList) {
+          if (item.location.includes(comm)) {
+            initialCommunity = comm;
+          }
+        }
+      }
+    }
+    setSelectedMoo(initialMoo);
+    setSelectedCommunity(initialCommunity);
+
+    // Parse Date
+    if (item.acquisition_date) {
+      const parts = item.acquisition_date.split('-');
+      if (parts.length === 3) {
+        setAcqYear((parseInt(parts[0]) + 543).toString());
+        setAcqMonth(parts[1]);
+        setAcqDay(parseInt(parts[2]).toString());
+      }
+    } else {
+      setAcqDay(''); setAcqMonth(''); setAcqYear('');
+    }
+
+    // Photo
+    if (item.photo_urls && item.photo_urls.length > 0) {
+      setPreviewUrl(item.photo_urls[0]);
+    } else {
+      setPreviewUrl('');
+    }
+
     setActiveTab('basic');
     setModalOpen(true);
   };
@@ -144,6 +230,28 @@ export default function ConstructionsPage() {
 
     try {
       const dataToSave = { ...form, department_id: deptIdToSave };
+      dataToSave.construction_type = 'คมนาคม';
+      
+      if (selectedMoo && selectedCommunity) {
+        dataToSave.location = `หมู่ที่ ${selectedMoo} ${selectedCommunity}`;
+      } else {
+        dataToSave.location = '';
+      }
+
+      if (acqYear && acqMonth && acqDay) {
+        const ceYear = parseInt(acqYear) - 543;
+        const mm = acqMonth.padStart(2, '0');
+        const dd = acqDay.padStart(2, '0');
+        dataToSave.acquisition_date = `${ceYear}-${mm}-${dd}`;
+      } else {
+        dataToSave.acquisition_date = null;
+      }
+
+      if (previewUrl) {
+        dataToSave.photo_urls = [previewUrl];
+      } else {
+        dataToSave.photo_urls = [];
+      }
 
       if (editingConstruction) {
         const { error } = await supabase
@@ -323,64 +431,123 @@ export default function ConstructionsPage() {
             <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               {activeTab === 'basic' && (
                 <div style={{ display: 'grid', gap: '16px' }}>
-                  {profile?.role === 'admin' && !selectedDeptId && (
-                    <div className="form-group">
-                      <label className="form-label required">ส่วนราชการ</label>
-                      <select className="form-input" value={form.department_id} onChange={(e) => updateField('department_id', e.target.value)} required>
-                        <option value="">-- เลือกส่วนราชการ --</option>
-                        {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name}</option>)}
-                      </select>
-                    </div>
-                  )}
-                  
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
-                      <label className="form-label required">รหัสพัสดุ</label>
-                      <input type="text" className="form-input" value={form.registry_code} onChange={e => updateField('registry_code', e.target.value)} required />
+                      <label className="form-label required">เลขรหัสพัสดุ</label>
+                      <input type="text" className="form-input" placeholder="000-00-0000" value={form.registry_code} onChange={handleRegistryCodeChange} required />
                     </div>
                     <div className="form-group">
                       <label className="form-label required">ประเภท</label>
-                      <select className="form-input" value={form.construction_type} onChange={e => updateField('construction_type', e.target.value)} required>
-                        <option value="ที่ดิน">ที่ดิน</option>
-                        <option value="ถนน">ถนน</option>
-                        <option value="อาคาร">อาคาร</option>
-                        <option value="สะพาน">สะพาน</option>
-                        <option value="ท่อระบายน้ำ">ท่อระบายน้ำ</option>
-                        <option value="สิ่งก่อสร้างอื่นๆ">สิ่งก่อสร้างอื่นๆ</option>
-                      </select>
+                      <input type="text" className="form-input bg-gray-100" value="คมนาคม" readOnly />
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label required">รูปพรรณ / ชื่อสิ่งก่อสร้าง</label>
+                    <label className="form-label required">ชื่อพัสดุ</label>
                     <input type="text" className="form-input" value={form.name || ''} onChange={e => updateField('name', e.target.value)} required />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">ที่ตั้ง (ซอย/ถนน/หมู่/ตำบล)</label>
-                    <input type="text" className="form-input" value={form.location || ''} onChange={e => updateField('location', e.target.value)} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
-                      <label className="form-label">วิธีจัดหา (เงินงบประมาณ/เงินสะสม)</label>
-                      <input type="text" className="form-input" value={form.procurement_method || ''} onChange={e => updateField('procurement_method', e.target.value)} />
+                      <label className="form-label required">ที่ตั้งพัสดุ (หมู่ที่)</label>
+                      <select className="form-input" value={selectedMoo} onChange={e => { setSelectedMoo(e.target.value); setSelectedCommunity(''); }} required>
+                        <option value="">-- เลือกหมู่ที่ --</option>
+                        {MOO_OPTIONS.map(moo => <option key={moo} value={moo}>หมู่ที่ {moo}</option>)}
+                      </select>
                     </div>
+                    <div className="form-group">
+                      <label className="form-label required">ที่ตั้งพัสดุ (ชุมชน)</label>
+                      <select className="form-input" value={selectedCommunity} onChange={e => setSelectedCommunity(e.target.value)} disabled={!selectedMoo} required>
+                        <option value="">-- เลือกชุมชน --</option>
+                        {selectedMoo && COMMUNITY_MAP[selectedMoo]?.map(comm => <option key={comm} value={comm}>{comm}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
                       <label className="form-label">ราคา/มูลค่า (บาท)</label>
                       <input type="number" className="form-input" value={form.price} onChange={e => updateField('price', parseFloat(e.target.value) || 0)} />
                     </div>
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
-                      <label className="form-label">วันที่ได้มา</label>
-                      <input type="date" className="form-input" value={form.acquisition_date || ''} onChange={e => updateField('acquisition_date', e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">เลขที่สัญญา/ข้อตกลง</label>
+                      <label className="form-label">ชื่อผู้รับจ้าง/ผู้ขาย/ผู้ให้</label>
                       <input type="text" className="form-input" value={form.contract_no || ''} onChange={e => updateField('contract_no', e.target.value)} />
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">ซื้อ/จ้าง/ได้มา เมื่อวันที่</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                      <select className="form-input" value={acqDay} onChange={e => setAcqDay(e.target.value)} required>
+                        <option value="">-- วันที่ --</option>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <select className="form-input" value={acqMonth} onChange={e => setAcqMonth(e.target.value)} required>
+                        <option value="">-- เดือน --</option>
+                        <option value="01">มกราคม</option>
+                        <option value="02">กุมภาพันธ์</option>
+                        <option value="03">มีนาคม</option>
+                        <option value="04">เมษายน</option>
+                        <option value="05">พฤษภาคม</option>
+                        <option value="06">มิถุนายน</option>
+                        <option value="07">กรกฎาคม</option>
+                        <option value="08">สิงหาคม</option>
+                        <option value="09">กันยายน</option>
+                        <option value="10">ตุลาคม</option>
+                        <option value="11">พฤศจิกายน</option>
+                        <option value="12">ธันวาคม</option>
+                      </select>
+                      <input type="text" className="form-input" placeholder="ปี พ.ศ. (เช่น 2569)" value={acqYear} onChange={e => setAcqYear(e.target.value.replace(/\D/g, '').slice(0, 4))} required />
+                    </div>
+                  </div>
+
+                  <h4 style={{ margin: '16px 0 8px 0', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>อื่นๆ</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div className="form-group">
+                      <label className="form-label">ขนาด กว้าง (เมตร)</label>
+                      <input type="number" step="0.01" className="form-input" value={form.width_m} onChange={e => updateField('width_m', parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">ยาว (เมตร)</label>
+                      <input type="number" step="0.01" className="form-input" value={form.length_m} onChange={e => updateField('length_m', parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">หนา (เมตร)</label>
+                      <input type="number" step="0.001" className="form-input" value={form.thickness_m} onChange={e => updateField('thickness_m', parseFloat(e.target.value) || 0)} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">หรือพื้นที่ก่อสร้างไม่น้อยกว่า (ตารางเมตร)</label>
+                    <input type="number" step="0.01" className="form-input" value={form.area_sqm} onChange={e => updateField('area_sqm', parseFloat(e.target.value) || 0)} />
+                  </div>
+
+                  <h4 style={{ margin: '16px 0 8px 0', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>การเปลี่ยนแปลงส่วนราชการและผู้ดูแลรับผิดชอบ</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group">
+                      <label className="form-label">พ.ศ.</label>
+                      <input type="text" className="form-input" placeholder="ปี พ.ศ." value={form.fiscal_year || ''} onChange={e => updateField('fiscal_year', e.target.value.replace(/\D/g, '').slice(0, 4))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">ชื่อส่วนราชการ (สำนัก,กอง,ฝ่าย)</label>
+                      <select className="form-input" value={form.department_id} onChange={(e) => updateField('department_id', e.target.value)}>
+                        <option value="">-- เลือกส่วนราชการ --</option>
+                        {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">ชื่อหัวหน้าส่วนราชการ</label>
+                    <input type="text" className="form-input" value={form.responsible_officer || ''} onChange={e => updateField('responsible_officer', e.target.value)} />
+                  </div>
+
+                  <h4 style={{ margin: '16px 0 8px 0', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>รูปถ่าย</h4>
+                  <div className="form-group">
+                    <input type="file" accept="image/*" className="form-input" onChange={handleFileChange} />
+                    {previewUrl && (
+                      <div style={{ marginTop: '12px' }}>
+                        <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid var(--border)' }} />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
