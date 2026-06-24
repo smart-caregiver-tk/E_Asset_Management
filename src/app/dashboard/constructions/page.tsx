@@ -298,9 +298,10 @@ export default function ConstructionsPage() {
   };
 
   const filteredData = constructions.filter(c => {
-    const matchSearch = (c.name || '').includes(searchQuery) || (c.registry_code || '').includes(searchQuery);
-    const matchType = filterType ? c.construction_type === filterType : true;
-    return matchSearch && matchType;
+    const cleanSearch = searchQuery.replace(/-/g, '').toLowerCase();
+    const cleanRegistry = (c.registry_code || '').replace(/-/g, '').toLowerCase();
+    const matchSearch = (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || cleanRegistry.includes(cleanSearch);
+    return matchSearch;
   });
 
   return (
@@ -324,31 +325,17 @@ export default function ConstructionsPage() {
       </div>
 
       <div className="card">
-        <div className="card-header" style={{ display: 'flex', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--border)' }}>
-          <div className="search-box" style={{ flex: 1, maxWidth: '300px' }}>
-            <SearchIcon size={18} className="search-icon" />
+        <div className="card-header" style={{ display: 'flex', padding: '20px', background: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--border)' }}>
+          <div className="search-box" style={{ flex: 1, maxWidth: '500px', display: 'flex', alignItems: 'center', background: '#fff', borderRadius: '8px', padding: '8px 16px', border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+            <SearchIcon size={20} className="search-icon" style={{ color: '#888', marginRight: '12px' }} />
             <input
               type="text"
-              placeholder="ค้นหารหัส หรือชื่อสิ่งก่อสร้าง..."
+              placeholder="ค้นหาด้วยเลขรหัสพัสดุ (เช่น 143640019) หรือชื่อพัสดุ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '15px' }}
             />
           </div>
-          <select
-            className="form-input"
-            style={{ width: '200px' }}
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="">-- ทุกประเภท --</option>
-            <option value="ที่ดิน">ที่ดิน</option>
-            <option value="ถนน">ถนน</option>
-            <option value="อาคาร">อาคาร</option>
-            <option value="สะพาน">สะพาน</option>
-            <option value="ท่อระบายน้ำ">ท่อระบายน้ำ</option>
-            <option value="สิ่งก่อสร้างอื่นๆ">สิ่งก่อสร้างอื่นๆ</option>
-          </select>
         </div>
 
         <div className="card-body" style={{ padding: 0 }}>
