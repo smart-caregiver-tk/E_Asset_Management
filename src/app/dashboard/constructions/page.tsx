@@ -5,8 +5,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { FolderTree, Plus, Edit2, Trash2, Loader2, Save, X, Search as SearchIcon, FileText } from 'lucide-react';
-import type { Construction, Department } from '@/types/database';
+import { FolderTree, Plus, Edit2, Trash2, Loader2, Save, X, Search as SearchIcon, FileText, Printer } from 'lucide-react';
+import type { Construction, ConstructionRepair, Department } from '@/types/database';
 
 export default function ConstructionsPage() {
   const { profile, selectedDeptId, departments } = useAuth();
@@ -21,7 +21,7 @@ export default function ConstructionsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingConstruction, setEditingConstruction] = useState<Construction | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'dimension' | 'land' | 'depreciation'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'dimension' | 'land' | 'depreciation' | 'repairs'>('basic');
 
   // New Custom States
   const [selectedMoo, setSelectedMoo] = useState('');
@@ -102,15 +102,32 @@ export default function ConstructionsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Construction | null>(null);
 
+  // Repair Form State
+  const [newRepair, setNewRepair] = useState<Partial<ConstructionRepair>>({
+    repair_date: '',
+    detail: '',
+    amount: 0,
+    contractor: '',
+    remark: ''
+  });
+  const [repairLoading, setRepairLoading] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('constructions').select('*');
+      let query = supabase.from('constructions').select('*, construction_repairs(*)');
       if (selectedDeptId) {
         query = query.eq('department_id', selectedDeptId);
       }
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
+      
+      // Update editingConstruction if modal is open
+      if (editingConstruction && data) {
+        const updated = data.find(c => c.id === editingConstruction.id);
+        if (updated) setEditingConstruction(updated);
+      }
+      
       setConstructions(data || []);
     } catch (err: any) {
       showToast('ไม่สามารถโหลดข้อมูลสิ่งก่อสร้างได้: ' + err.message, 'error');
@@ -304,6 +321,43 @@ export default function ConstructionsPage() {
     return matchSearch;
   });
 
+  const handleAddRepair = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingConstruction) return;
+    setRepairLoading(true);
+    try {
+      const { error } = await supabase.from('construction_repairs').insert([{
+        construction_id: editingConstruction.id,
+        repair_date: newRepair.repair_date || null,
+        detail: newRepair.detail,
+        amount: newRepair.amount || 0,
+        contractor: newRepair.contractor,
+        remark: newRepair.remark,
+        department_id: editingConstruction.department_id
+      }]);
+      if (error) throw error;
+      showToast('เพิ่มรายการซ่อมสำเร็จ');
+      setNewRepair({ repair_date: '', detail: '', amount: 0, contractor: '', remark: '' });
+      fetchData();
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+    } finally {
+      setRepairLoading(false);
+    }
+  };
+
+  const handleDeleteRepair = async (repairId: string) => {
+    if (!confirm('ยืนยันการลบรายการซ่อมนี้?')) return;
+    try {
+      const { error } = await supabase.from('construction_repairs').delete().eq('id', repairId);
+      if (error) throw error;
+      showToast('ลบรายการซ่อมสำเร็จ');
+      fetchData();
+    } catch (err: any) {
+      showToast('ไม่สามารถลบรายการได้: ' + err.message, 'error');
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -378,6 +432,9 @@ export default function ConstructionsPage() {
                       )}
                       <td className="text-center">
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button className="btn-icon" style={{ background: '#E0F2FE', color: '#0369A1' }} onClick={() => window.open(`/dashboard/constructions/${item.id}/print`, '_blank')} title="พิมพ์แบบ พ.ด.1">
+                            <Printer size={14} />
+                          </button>
                           <button className="btn-icon btn-icon-edit" onClick={() => openEditModal(item)} title="แก้ไข">
                             <Edit2 size={14} />
                           </button>
@@ -412,6 +469,7 @@ export default function ConstructionsPage() {
             <button type="button" className={`modal-tab ${activeTab === 'basic' ? 'active' : ''}`} onClick={() => setActiveTab('basic')}>ข้อมูลหลัก</button>
             <button type="button" className={`modal-tab ${activeTab === 'dimension' ? 'active' : ''}`} onClick={() => setActiveTab('dimension')}>ขนาดและมิติ</button>
             <button type="button" className={`modal-tab ${activeTab === 'land' ? 'active' : ''}`} onClick={() => setActiveTab('land')}>ข้อมูลที่ดินและอาคาร</button>
+            <button type="button" className={`modal-tab ${activeTab === 'repairs' ? 'active' : ''}`} onClick={() => setActiveTab('repairs')} disabled={!editingConstruction}>บันทึกการซ่อม/ปรับปรุง</button>
           </div>
 
           <form onSubmit={handleSave}>
@@ -620,6 +678,57 @@ export default function ConstructionsPage() {
                       <input type="number" className="form-input" value={form.building_cost} onChange={e => updateField('building_cost', parseFloat(e.target.value) || 0)} />
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'repairs' && editingConstruction && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <h4 style={{ marginBottom: '12px', fontSize: '0.9rem' }}>เพิ่มรายการซ่อม/ปรับปรุง</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <input type="date" className="form-input" value={newRepair.repair_date || ''} onChange={e => setNewRepair({ ...newRepair, repair_date: e.target.value })} required />
+                      <input type="text" className="form-input" placeholder="รายการซ่อม/ปรับปรุงแก้ไข" value={newRepair.detail || ''} onChange={e => setNewRepair({ ...newRepair, detail: e.target.value })} required />
+                      <input type="number" className="form-input" placeholder="จำนวนเงิน (บาท)" value={newRepair.amount || ''} onChange={e => setNewRepair({ ...newRepair, amount: parseFloat(e.target.value) || 0 })} required />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px' }}>
+                      <input type="text" className="form-input" placeholder="ชื่อผู้รับจ้าง/ผู้รับทำ" value={newRepair.contractor || ''} onChange={e => setNewRepair({ ...newRepair, contractor: e.target.value })} />
+                      <input type="text" className="form-input" placeholder="หมายเหตุ" value={newRepair.remark || ''} onChange={e => setNewRepair({ ...newRepair, remark: e.target.value })} />
+                      <button type="button" className="btn btn-primary" onClick={handleAddRepair} disabled={repairLoading || !newRepair.detail}>
+                        {repairLoading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                        เพิ่มรายการ
+                      </button>
+                    </div>
+                  </div>
+
+                  <table style={{ width: '100%', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr>
+                        <th>วัน เดือน ปี</th>
+                        <th>รายการซ่อม</th>
+                        <th className="text-right">จำนวนเงิน</th>
+                        <th>ผู้รับจ้าง</th>
+                        <th>หมายเหตุ</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editingConstruction.construction_repairs?.map(r => (
+                        <tr key={r.id}>
+                          <td>{r.repair_date ? new Date(r.repair_date).toLocaleDateString('th-TH') : '-'}</td>
+                          <td>{r.detail}</td>
+                          <td className="text-right">{r.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td>{r.contractor || '-'}</td>
+                          <td>{r.remark || '-'}</td>
+                          <td className="text-right">
+                            <button type="button" className="btn-icon btn-icon-del" onClick={() => handleDeleteRepair(r.id)}><Trash2 size={12} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(!editingConstruction.construction_repairs || editingConstruction.construction_repairs.length === 0) && (
+                        <tr><td colSpan={6} className="text-center text-muted" style={{ padding: '20px' }}>ยังไม่มีประวัติการซ่อมบำรุง</td></tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

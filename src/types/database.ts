@@ -219,6 +219,7 @@ export interface Construction {
   department_id: string;
   created_at: string;
   updated_at: string;
+  construction_repairs?: ConstructionRepair[];
 }
 
 export interface ConstructionDepreciation {
@@ -230,4 +231,17 @@ export interface ConstructionDepreciation {
   accumulated: string | null;
   remark: string | null;
   created_at: string;
+}
+
+export interface ConstructionRepair {
+  id: string;
+  construction_id: string;
+  repair_date: string | null;
+  detail: string;
+  amount: number;
+  contractor: string | null;
+  remark: string | null;
+  department_id: string;
+  created_at: string;
+  updated_at: string;
 }
