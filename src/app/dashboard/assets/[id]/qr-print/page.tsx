@@ -51,8 +51,8 @@ export default function QRPrintPage({ params }: { params: Promise<{ id: string }
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
         <h2>{error || 'ไม่พบข้อมูลครุภัณฑ์'}</h2>
-        <button className="btn btn-outline" onClick={() => router.back()} style={{ marginTop: '20px' }}>
-          กลับ
+        <button className="btn btn-outline" onClick={() => window.history.length > 1 ? router.back() : window.close()} style={{ marginTop: '20px' }}>
+          ปิดหน้าต่าง
         </button>
       </div>
     );
@@ -75,8 +75,8 @@ export default function QRPrintPage({ params }: { params: Promise<{ id: string }
       `}} />
 
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', maxWidth: '800px', margin: '0 auto 20px' }}>
-        <button className="btn btn-outline" onClick={() => router.back()}>
-          <ArrowLeft size={16} /> กลับ
+        <button className="btn btn-outline" onClick={() => window.history.length > 1 ? router.back() : window.close()}>
+          <ArrowLeft size={16} /> ปิดหน้าต่าง
         </button>
         <button className="btn btn-primary" onClick={() => window.print()}>
           <Printer size={16} /> พิมพ์ฉลาก
