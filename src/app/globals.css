@@ -417,7 +417,7 @@ textarea.form-input, textarea.textarea-field { resize: vertical; }
 /* ============================================================ PRINT */
 @media print {
   body { background: #fff !important; }
-  .sidebar, .topbar, .modal-backdrop, .toast-container, .page-header .btn { display: none !important; }
+  .sidebar, .topbar, .modal-backdrop, .toast-container, .page-header .btn, .no-print { display: none !important; }
   .main-content { margin-left: 0 !important; }
   .page-container { padding: 0 !important; }
   .card { border: none !important; box-shadow: none !important; }
