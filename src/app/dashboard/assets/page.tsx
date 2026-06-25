@@ -469,7 +469,7 @@ export default function AssetsPage() {
       </div>
 
       {/* Bulk Action Bar */}
-      {profile?.role === 'admin' && selectedAssets.length > 0 && (
+      {(profile?.role === 'admin' || profile?.role === 'department') && selectedAssets.length > 0 && (
         <div className="card" style={{ marginBottom: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
           <div className="card-body" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -509,7 +509,7 @@ export default function AssetsPage() {
               <table>
                 <thead>
                   <tr>
-                    {profile?.role === 'admin' && (
+                    {(profile?.role === 'admin' || profile?.role === 'department') && (
                       <th style={{ width: '40px', textAlign: 'center' }}>
                         <input 
                           type="checkbox" 
@@ -538,7 +538,7 @@ export default function AssetsPage() {
 
                     return (
                       <tr key={asset.id} className={selectedAssets.includes(asset.id) ? 'selected-row' : ''} style={{ background: selectedAssets.includes(asset.id) ? '#f0fdf4' : '' }}>
-                        {profile?.role === 'admin' && (
+                        {(profile?.role === 'admin' || profile?.role === 'department') && (
                           <td className="text-center">
                             <input 
                               type="checkbox" 
