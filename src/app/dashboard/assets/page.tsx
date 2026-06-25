@@ -652,7 +652,7 @@ export default function AssetsPage() {
               <ImageIcon size={14} />
               รูปถ่ายครุภัณฑ์
             </button>
-            {profile?.role === 'admin' && editingAsset && (
+            {(profile?.role === 'admin' || profile?.role === 'department') && editingAsset && (
               <button
                 type="button"
                 className={`modal-tab ${activeTab === 'qr' ? 'active' : ''}`}
@@ -1112,7 +1112,7 @@ export default function AssetsPage() {
               </div>
 
               {/* TAB 5: QR PASSPORT */}
-              {profile?.role === 'admin' && editingAsset && (
+              {(profile?.role === 'admin' || profile?.role === 'department') && editingAsset && (
                 <div className={`tab-content ${activeTab === 'qr' ? 'active' : ''}`}>
                   <QRPassportPanel 
                     asset={editingAsset} 
