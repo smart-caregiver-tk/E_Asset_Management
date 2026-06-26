@@ -247,6 +247,10 @@ export default function ConstructionsPage() {
 
     try {
       const dataToSave = { ...form, department_id: deptIdToSave };
+      
+      // Remove joined relations before saving to database
+      delete (dataToSave as any).construction_repairs;
+      
       dataToSave.construction_type = 'คมนาคม';
       
       if (selectedMoo && selectedCommunity) {
