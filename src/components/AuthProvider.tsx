@@ -74,7 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // ไม่มี session จริงๆ → redirect ไป login
         setUser(null);
         setProfile(null);
-        router.replace('/login');
+        
+        const isPublicPath = pathname.startsWith('/login') || pathname.startsWith('/asset-passport');
+        if (!isPublicPath) {
+          router.replace('/login');
+        }
       }
       if (isMounted) setLoading(false);
     }
